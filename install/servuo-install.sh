@@ -17,14 +17,20 @@ update_os
 msg_info "Installing Dependencies"
 $STD apt-get update
 $STD apt install -y git curl wget zlib1g
-$STD sudo apt -y install zlib1g mono-complete dotnet-sdk-10.0 dotnet-runtime-10.0
-
 msg_ok "Installed Dependencies"
 
-msg_info "Downloading dotnet-install.sh script"
-$STD curl -L https://dot.net/v1/dotnet-install.sh -o dotnet-install.sh
-$STD chmod +x dotnet-install.sh
-$STD ./dotnet-install.sh --channel 8.0
+# dotnet
+msg_info "Installing dotnet SDK"
+$STD wget https://packages.microsoft.com/config/debian/13/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
+$STD sudo dpkg -i packages-microsoft-prod.deb
+$STD rm packages-microsoft-prod.deb
+$STD apt update && apt install -y dotnet-sdk-10.0
+msg_ok "Installed dotnet SDK"
+
+# msg_info "Downloading dotnet-install.sh script"
+# $STD curl -L https://dot.net/v1/dotnet-install.sh -o dotnet-install.sh
+# $STD chmod +x dotnet-install.sh
+# $STD ./dotnet-install.sh --channel 8.0
 
 msg_info "Cloning ServUO"
 $STD git clone --depth 1 https://github.com/ServUO/ServUO.git /opt/servuo
