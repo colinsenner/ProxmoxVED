@@ -26,7 +26,6 @@ $STD sudo dpkg -i packages-microsoft-prod.deb
 $STD rm packages-microsoft-prod.deb
 $STD apt update && apt install -y dotnet-sdk-10.0
 msg_ok "Installed dotnet SDK"
-
 # msg_info "Downloading dotnet-install.sh script"
 # $STD curl -L https://dot.net/v1/dotnet-install.sh -o dotnet-install.sh
 # $STD chmod +x dotnet-install.sh
