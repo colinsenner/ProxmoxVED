@@ -26,19 +26,10 @@ $STD sudo dpkg -i packages-microsoft-prod.deb
 $STD rm packages-microsoft-prod.deb
 $STD apt update && apt install -y dotnet-sdk-10.0
 msg_ok "Installed dotnet SDK"
-# msg_info "Downloading dotnet-install.sh script"
-# $STD curl -L https://dot.net/v1/dotnet-install.sh -o dotnet-install.sh
-# $STD chmod +x dotnet-install.sh
-# $STD ./dotnet-install.sh --channel 8.0
 
 msg_info "Cloning ServUO"
 $STD git clone --depth 1 https://github.com/ServUO/ServUO.git /opt/servuo
 msg_ok "Cloned ServUO"
-
-msg_info "Building ServUO"
-cd /opt/servuo
-$STD dotnet build -c Release
-msg_ok "Built ServUO"
 
 msg_info "Creating Service"
 cat <<EOF >/etc/systemd/system/servuo.service
@@ -54,8 +45,16 @@ Restart=always
 [Install]
 WantedBy=multi-user.target
 EOF
-systemctl enable -q --now servuo.service
+# systemctl enable -q --now servuo.service
 msg_ok "Created Service"
+
+msg_info "Building ServUO"
+$STD cd /opt/servuo
+$STD make build
+
+msg_ok "Built ServUO"
+$STD make run
+msg_ok "Running ServUO"
 
 motd_ssh
 customize
