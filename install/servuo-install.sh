@@ -16,7 +16,7 @@ update_os
 
 msg_info "Installing Dependencies"
 $STD apt-get update
-$STD apt install -y git curl wget zlib1g
+$STD apt install -y git curl wget zlib1g mono-complete
 msg_ok "Installed Dependencies"
 
 # dotnet
@@ -40,3 +40,34 @@ msg_info "Building ServUO"
 cd /opt/servuo
 $STD dotnet build -c Release
 msg_ok "Built ServUO"
+
+msg_info "Creating Service"
+cat <<EOF >/etc/systemd/system/servuo.service
+[Unit]
+Description=ServUO Ultima Online Server
+After=network.target
+
+[Service]
+WorkingDirectory=/opt/servuo
+ExecStart=/usr/bin/dotnet /opt/servuo/publish/ServUO.dll
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+EOF
+systemctl enable -q --now servuo.service
+msg_ok "Created Service"
+
+motd_ssh
+customize
+
+cat >>/etc/motd <<EOF
+
+ ServUO Port: 2593
+ Docs: https://github.com/ServUO/ServUO/wiki
+EOF
+
+msg_info "Cleaning up"
+$STD apt-get -y autoremove
+$STD apt-get -y autoclean
+msg_ok "Cleaned up"
