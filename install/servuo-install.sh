@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 
 # Copyright (c) 2021-2026 community-scripts ORG
-# Author: [YourUserName]
-# License: MIT | https://github.com/--full/ProxmoxVED/raw/main/LICENSE
-# Source: [SOURCE_URL]
+# Author: colinsenner
+# License: MIT | https://github.com/colinsenner/ProxmoxVED/raw/main/LICENSE
+# Source: https://github.com/ServUO/ServUO
 
 # Import Functions und Setup
 source /dev/stdin <<<"$FUNCTIONS_FILE_PATH"
@@ -22,6 +22,8 @@ $STD apt-get install -y \
 $STD add-apt-respoitory ppa:dotnet/backports
 $STD apt-get update
 $STD sudo apt-get -y install zlib1g mono-complete dotnet-sdk-10.0 dotnet-runtime-10.0
+
+msg_ok "Installed Dependencies"
 
 # msg_info "Downloading dotnet-install.sh script"
 # $STD curl -L https://dot.net/v1/dotnet-install.sh -o dotnet-install.sh
