@@ -16,7 +16,7 @@ update_os
 
 msg_info "Installing Dependencies"
 $STD apt-get update
-$STD apt install -y git curl wget zlib1g mono-complete
+$STD apt install -y git curl wget zlib1g mono-complete make
 msg_ok "Installed Dependencies"
 
 # dotnet
