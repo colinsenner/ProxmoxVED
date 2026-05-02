@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-source <(curl -s https://raw.githubusercontent.com/--full/ProxmoxVED/main/misc/build.func)
+source <(curl -s https://raw.githubusercontent.com/colinsenner/ProxmoxVED/main/misc/build.func)
 # Copyright (c) 2021-2026 community-scripts ORG
-# Author: [YourUserName]
-# License: MIT | https://github.com/--full/ProxmoxVED/raw/main/LICENSE
-# Source: [SOURCE_URL]
+# Author: colinsenner
+# License: MIT | https://github.com/colinsenner/ProxmoxVED/raw/main/LICENSE
+# Source: https://github.com/ServUO/ServUO
 
 APP="ServUO"
 var_tags="${var_tags:-ultima online;uo;game server}"
