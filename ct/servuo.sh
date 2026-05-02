@@ -6,7 +6,7 @@ source <(curl -s https://raw.githubusercontent.com/colinsenner/ProxmoxVED/main/m
 # Source: https://github.com/ServUO/ServUO
 
 APP="ServUO"
-var_tags="${var_tags:-ultima online;uo;game server}"
+var_tags="${var_tags:-ultima-online;uo;game-server}"
 var_cpu="${var_cpu:-2}"
 var_ram="${var_ram:-1024}"
 var_disk="${var_disk:-10}"
