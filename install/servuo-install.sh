@@ -16,8 +16,16 @@ update_os
 
 msg_info "Installing Dependencies"
 $STD apt-get update
-$STD apt install -y git curl wget zlib1g mono-complete make
+$STD apt install -y git curl wget zlib1g mono-complete make wine wine32
 msg_ok "Installed Dependencies"
+
+# UO Client Files
+msg_info "Downloading UO Client Files"
+$STD mkdir /opt/UO && sudo chown $(whoami):$(whoami) /opt/UO
+$STD cd /opt/UO
+$STD wget https://github.com/ClassicUO/deploy/releases/latest/download/ClassicUOLauncher-linux-x64-release.zip
+$STD unzip ClassicUOLauncher-linux-x64-release.zip
+#$STD WINEPREFIX="/opt/UO/" wine ClassicUOLauncher.exe --install
 
 # dotnet
 msg_info "Installing dotnet SDK"
@@ -46,15 +54,12 @@ Restart=always
 WantedBy=multi-user.target
 EOF
 # systemctl enable -q --now servuo.service
-msg_ok "Created Service"
+# msg_ok "Created Service"
 
 msg_info "Building ServUO"
 $STD cd /opt/servuo
-$STD make build
-
+$STD make build release
 msg_ok "Built ServUO"
-$STD make run
-msg_ok "Running ServUO"
 
 motd_ssh
 customize
