@@ -16,7 +16,7 @@ update_os
 
 msg_info "Installing Dependencies"
 $STD apt-get update
-$STD apt install -y git curl wget zlib1g mono-complete make wine wine32
+$STD apt install -y git curl wget zlib1g mono-complete make libz-dev libgdiplus wine
 msg_ok "Installed Dependencies"
 
 # UO Client Files
