@@ -15,17 +15,17 @@ network_check
 update_os
 
 msg_info "Installing Dependencies"
+$STD dpkg --add-architecture i386
 $STD apt-get update
-$STD apt install -y git curl wget zlib1g mono-complete make libz-dev libgdiplus wine
+$STD apt install -y git curl wget zlib1g mono-complete make libz-dev libgdiplus 
 msg_ok "Installed Dependencies"
 
 # UO Client Files
 msg_info "Downloading UO Client Files"
 $STD mkdir /opt/UO && sudo chown $(whoami):$(whoami) /opt/UO
 $STD cd /opt/UO
-$STD wget https://github.com/ClassicUO/deploy/releases/latest/download/ClassicUOLauncher-linux-x64-release.zip
-$STD unzip ClassicUOLauncher-linux-x64-release.zip
-#$STD WINEPREFIX="/opt/UO/" wine ClassicUOLauncher.exe --install
+$STD wget http://web.cdn.eamythic.com/us/uo/installers/20120309/UOClassicSetup_7_0_24_0.exe
+$STD WINEPREFIX="/opt/UO/" WINEARCH=win32 wine UOClassicSetup_7_0_24_0.exe /desktop=shell,1244x700
 
 # dotnet
 msg_info "Installing dotnet SDK"
@@ -47,14 +47,14 @@ After=network.target
 
 [Service]
 WorkingDirectory=/opt/servuo
-ExecStart=/usr/bin/dotnet /opt/servuo/publish/ServUO.dll
+ExecStart=/usr/bin/mono /opt/servuo/ServUO.exe
 Restart=always
 
 [Install]
 WantedBy=multi-user.target
 EOF
-# systemctl enable -q --now servuo.service
-# msg_ok "Created Service"
+systemctl enable -q --now servuo.service
+msg_ok "Created Service"
 
 msg_info "Building ServUO"
 $STD cd /opt/servuo
