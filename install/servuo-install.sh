@@ -14,6 +14,12 @@ setting_up_container
 network_check
 update_os
 
+# Application specific directories
+APP_DIR="/opt/ServUO"
+UO_DIR="/opt/uo"
+UO_DATA_DIR="${APP_DIR}/UO_DATA"
+DATAPATH_CONFIG="${APP_DIR}/Config/DataPath.cfg"
+
 msg_info "Installing Dependencies"
 $STD dpkg --add-architecture i386
 $STD apt update
@@ -22,15 +28,15 @@ msg_ok "Installed Dependencies"
 
 # UO Client Files
 msg_info "Downloading UO Client Files"
-$STD mkdir /opt/uo && chown $(whoami):$(whoami) /opt/uo
-$STD cd /opt/uo
+$STD mkdir ${UO_DIR} && chown $(whoami):$(whoami) ${UO_DIR}
+$STD cd ${UO_DIR}
 $STD wget http://web.cdn.eamythic.com/us/uo/installers/20120309/UOClassicSetup_7_0_24_0.exe
 
 msg_info "Creating automated installer script"
 # For some reason the installer doesn't respect /S /NCRC /D=... So we send the keystrokes manually
-cat > install.sh << 'EOF'
+cat >install.sh <<'EOF'
 #!/usr/bin/env bash
-export WINEPREFIX=/opt/uo/.wine32
+export WINEPREFIX=/opt/uo/
 export WINEARCH=win32
 
 # Start the installer in background
@@ -76,18 +82,26 @@ $STD apt update && apt install -y dotnet-sdk-10.0
 msg_ok "Installed dotnet SDK"
 
 msg_info "Cloning ServUO"
-$STD git clone --depth 1 https://github.com/ServUO/ServUO.git /opt/servuo
+$STD git clone --depth 1 https://github.com/ServUO/ServUO.git ${APP_DIR}
 msg_ok "Cloned ServUO"
 
+msg_info "Copying UO Client Files to ${UO_DATA_DIR}"
+$STD mkdir ${UO_DATA_DIR}
+$STD cp "/opt/uo/drive_c/Program\ Files/Electronic\ Arts/Ultima\ Online\ Classic/*.mul" ${UO_DATA_DIR}/
+msg_ok "Copied UO Client Files"
+
+msg_info "Setting the custom path in ServUO ${DATAPATH_CONFIG}"
+$STD sed -i "s|^#CustomPath=.*|CustomPath=${UO_DATA_DIR}|" ${DATAPATH_CONFIG}
+
 msg_info "Creating Service"
-cat << EOF >/etc/systemd/system/servuo.service
+cat <<EOF >/etc/systemd/system/servuo.service
 [Unit]
 Description=ServUO Ultima Online Server
 After=network.target
 
 [Service]
-WorkingDirectory=/opt/servuo
-ExecStart=/usr/bin/mono /opt/servuo/ServUO.exe
+WorkingDirectory=${APP_DIR}
+ExecStart=/usr/bin/mono ${APP_DIR}/ServUO.exe
 Restart=always
 
 [Install]
@@ -98,8 +112,8 @@ systemctl enable -q --now servuo.service
 msg_ok "Created Service"
 
 msg_info "Building ServUO"
-# $STD cd /opt/servuo
-# $STD make build release
+$STD cd ${APP_DIR}
+$STD make build release
 msg_ok "Built ServUO"
 
 motd_ssh
