@@ -30,7 +30,7 @@ msg_ok "Installed Dependencies"
 msg_info "Downloading UO Client Files"
 $STD mkdir ${UO_DIR} && chown $(whoami):$(whoami) ${UO_DIR}
 $STD cd ${UO_DIR}
-$STD wget http://web.cdn.eamythic.com/us/uo/installers/20120309/UOClassicSetup_7_0_24_0.exe
+wget http://web.cdn.eamythic.com/us/uo/installers/20120309/UOClassicSetup_7_0_24_0.exe
 
 msg_info "Creating automated installer script"
 # For some reason the installer doesn't respect /S /NCRC /D=... So we send the keystrokes manually
@@ -69,9 +69,61 @@ EOF
 
 chmod +x install.sh
 msg_info "Installing UO Classic Game Files"
-xvfb-run ./install.sh
-
+$STD xvfb-run ./install.sh
 msg_ok "Installed UO Classic Game Files"
+
+# UOS_Latest.exe
+msg_info "Downloading UOS_Latest.exe"
+wget http://uos-update.github.io/UOS_Latest.exe
+msg_ok "Downloaded UOS_Latest.exe"
+
+# Creating UOS_Latest.exe install script
+cat >install_uos.sh <<'EOF'
+#!/usr/bin/env bash
+export WINEPREFIX=/opt/uo/
+export WINEARCH=win32
+
+# Start the installer in background
+wine setup.exe &
+WINE_PID=$!
+
+# Screen 1: OK
+sleep 5
+xdotool key Return
+# Screen 2: Next
+sleep 5
+xdotool key alt+n
+# Screen 3: Accept
+sleep 5
+xdotool key alt+a
+# Screen 4: Next
+sleep 5
+xdotool key alt+n
+# Screen 5: Next
+sleep 5
+xdotool key alt+n
+# Screen 6: Next
+sleep 5
+xdotool key alt+n
+# Screen 7: Install
+sleep 5
+xdotool key alt+i
+# Wait for install to complete
+sleep 15
+# Uncheck readme
+xdotool key space
+# Screen 8: Finish
+sleep 1
+xdotool key alt+f
+
+wait $WINE_PID
+echo "Install complete!"
+EOF
+
+chmod +x install_uos.sh
+msg_info "Installing UOS_Latest.exe"
+$STD xvfb-run ./install_uos.sh
+msg_ok "Installed UOS_Latest.exe"
 
 # dotnet
 msg_info "Installing dotnet SDK"
