@@ -27,7 +27,7 @@ $STD cd /opt/uo
 $STD wget http://web.cdn.eamythic.com/us/uo/installers/20120309/UOClassicSetup_7_0_24_0.exe
 
 # For some reason the installer doesn't respect /S /NCRC /D=... So we send the keystrokes manually
-$STD cat > install.sh << 'EOF'
+cat > install.sh << 'EOF'
 #!/usr/bin/env bash
 export WINEPREFIX=/opt/uo/.wine32
 export WINEARCH=win32
@@ -60,7 +60,7 @@ wait $WINE_PID
 echo "Install complete!"
 EOF
 
-$STD chmod +x install.sh
+ chmod +x install.sh
 $STD xvfb-run ./install.sh
 
 # dotnet
