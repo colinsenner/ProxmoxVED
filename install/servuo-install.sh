@@ -63,7 +63,6 @@ xdotool key alt+i
 sleep 30
 xdotool key alt+f
 
-wait $WINE_PID
 echo "Install complete!"
 EOF
 
@@ -116,7 +115,6 @@ xdotool key space
 sleep 1
 xdotool key alt+f
 
-wait $WINE_PID
 echo "Install complete!"
 EOF
 
