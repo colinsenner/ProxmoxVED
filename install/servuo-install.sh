@@ -19,6 +19,8 @@ APP_DIR="/opt/ServUO"
 UO_DIR="/opt/uo"
 UO_DATA_DIR="${APP_DIR}/UO_DATA"
 DATAPATH_CONFIG="${APP_DIR}/Config/DataPath.cfg"
+WINEPREFIX="/opt/uo/"
+WINEARCH=win32
 
 msg_info "Installing Dependencies"
 $STD dpkg --add-architecture i386
@@ -36,31 +38,20 @@ msg_info "Creating automated installer script"
 # For some reason the installer doesn't respect /S /NCRC /D=... So we send the keystrokes manually
 cat >install.sh <<'EOF'
 #!/usr/bin/env bash
-export WINEPREFIX=/opt/uo/
-export WINEARCH=win32
 
 # Start the installer in background
 wine UOClassicSetup_7_0_24_0.exe &
 WINE_PID=$!
 
-# Screen 1: Next
-sleep 10
+sleep 10  # Screen 1: Next
 xdotool key alt+n
-
-# Screen 2: Accept license
-sleep 5
+sleep 5  # Screen 2: Accept license
 xdotool key alt+a
-
-# Screen 3: Next
-sleep 5
+sleep 5  # Screen 3: Next
 xdotool key alt+n
-
-# Screen 4: Install
-sleep 5
+sleep 5  # Screen 4: Install
 xdotool key alt+i
-
-# Wait for install to complete, then Finish
-sleep 30
+sleep 30  # Wait for install to complete, then Finish
 xdotool key alt+f
 
 echo "Install complete!"
@@ -68,60 +59,11 @@ EOF
 
 chmod +x install.sh
 msg_info "Installing UO Classic Game Files"
-$STD xvfb-run ./install.sh
+xvfb-run ./install.sh
 msg_ok "Installed UO Classic Game Files"
 
-# UOS_Latest.exe
-msg_info "Downloading UOS_Latest.exe"
-wget http://uos-update.github.io/UOS_Latest.exe
-msg_ok "Downloaded UOS_Latest.exe"
-
-# Creating UOS_Latest.exe install script
-cat >install_uos.sh <<'EOF'
-"#!/usr/bin/env bash
-export WINEPREFIX=/opt/uo/
-export WINEARCH=win32
-
-# Start the installer in background
-wine setup.exe &
-WINE_PID=$!
-
-# Screen 1: OK
-sleep 5
-xdotool key Return
-# Screen 2: Next
-sleep 5
-xdotool key alt+n
-# Screen 3: Accept
-sleep 5
-xdotool key alt+a
-# Screen 4: Next
-sleep 5
-xdotool key alt+n
-# Screen 5: Next
-sleep 5
-xdotool key alt+n
-# Screen 6: Next
-sleep 5
-xdotool key alt+n
-# Screen 7: Install
-sleep 5
-xdotool key alt+i
-# Wait for install to complete
-sleep 15
-# Uncheck readme
-xdotool key space
-# Screen 8: Finish
-sleep 1
-xdotool key alt+f
-
-echo "Install complete!"
-EOF
-
-chmod +x install_uos.sh
-msg_info "Installing UOS_Latest.exe"
-$STD xvfb-run ./install_uos.sh
-msg_ok "Installed UOS_Latest.exe"
+msg_info "Running UO Client to generate .mul files, and patch UO to the latest version..."
+$STD xvfb-run wine ${UO_DIR}/drive_c/Program\ Files/Electronic\ Arts/Ultima\ Online\ Classic/UO.exe
 
 # dotnet
 # msg_info "Installing dotnet SDK"
