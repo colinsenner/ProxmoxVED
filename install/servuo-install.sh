@@ -17,7 +17,7 @@ update_os
 msg_info "Installing Dependencies"
 $STD dpkg --add-architecture i386
 $STD apt update
-$STD apt install -y git curl wget zlib1g mono-complete make libz-dev wine wine32 xvfb
+$STD apt install -y git curl wget zlib1g mono-complete make libz-dev wine wine32 xvfb xdotool
 msg_ok "Installed Dependencies"
 
 # UO Client Files
@@ -26,6 +26,7 @@ $STD mkdir /opt/uo && chown $(whoami):$(whoami) /opt/uo
 $STD cd /opt/uo
 $STD wget http://web.cdn.eamythic.com/us/uo/installers/20120309/UOClassicSetup_7_0_24_0.exe
 
+msg_info "Creating automated installer script"
 # For some reason the installer doesn't respect /S /NCRC /D=... So we send the keystrokes manually
 cat > install.sh << 'EOF'
 #!/usr/bin/env bash
@@ -61,55 +62,56 @@ echo "Install complete!"
 EOF
 
 chmod +x install.sh
-msg_info "Running UO Classic Installer"
+msg_info "Installing UO Classic Game Files"
 xvfb-run ./install.sh
 
-msg_ok "Installed UO Classic Files"
+msg_ok "Installed UO Classic Game Files"
 
 # dotnet
-# msg_info "Installing dotnet SDK"
-# $STD wget https://packages.microsoft.com/config/debian/13/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
-# $STD sudo dpkg -i packages-microsoft-prod.deb
-# $STD rm packages-microsoft-prod.deb
-# $STD apt update && apt install -y dotnet-sdk-10.0
-# msg_ok "Installed dotnet SDK"
+msg_info "Installing dotnet SDK"
+$STD wget https://packages.microsoft.com/config/debian/13/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
+$STD sudo dpkg -i packages-microsoft-prod.deb
+$STD rm packages-microsoft-prod.deb
+$STD apt update && apt install -y dotnet-sdk-10.0
+msg_ok "Installed dotnet SDK"
 
-# msg_info "Cloning ServUO"
-# $STD git clone --depth 1 https://github.com/ServUO/ServUO.git /opt/servuo
-# msg_ok "Cloned ServUO"
+msg_info "Cloning ServUO"
+$STD git clone --depth 1 https://github.com/ServUO/ServUO.git /opt/servuo
+msg_ok "Cloned ServUO"
 
-# msg_info "Creating Service"
-# cat <<EOF >/etc/systemd/system/servuo.service
-# [Unit]
-# Description=ServUO Ultima Online Server
-# After=network.target
+msg_info "Creating Service"
+cat << EOF >/etc/systemd/system/servuo.service
+[Unit]
+Description=ServUO Ultima Online Server
+After=network.target
 
-# [Service]
-# WorkingDirectory=/opt/servuo
-# ExecStart=/usr/bin/mono /opt/servuo/ServUO.exe
-# Restart=always
+[Service]
+WorkingDirectory=/opt/servuo
+ExecStart=/usr/bin/mono /opt/servuo/ServUO.exe
+Restart=always
 
-# [Install]
-# WantedBy=multi-user.target
-# EOF
-# systemctl enable -q --now servuo.service
-# msg_ok "Created Service"
+[Install]
+WantedBy=multi-user.target
+EOF
 
-# msg_info "Building ServUO"
-# # $STD cd /opt/servuo
-# # $STD make build release
-# msg_ok "Built ServUO"
+systemctl enable -q --now servuo.service
+msg_ok "Created Service"
 
-# motd_ssh
-# customize
+msg_info "Building ServUO"
+# $STD cd /opt/servuo
+# $STD make build release
+msg_ok "Built ServUO"
 
-# cat >>/etc/motd <<EOF
+motd_ssh
+customize
 
-#  ServUO Port: 2593
-#  Docs: https://github.com/ServUO/ServUO/wiki
-# EOF
+cat >>/etc/motd <<EOF
 
-# msg_info "Cleaning up"
-# $STD apt-get -y autoremove
-# $STD apt-get -y autoclean
-# msg_ok "Cleaned up"
+ ServUO Port: 2593
+ Docs: https://github.com/ServUO/ServUO/wiki
+EOF
+
+msg_info "Cleaning up"
+$STD apt-get -y autoremove
+$STD apt-get -y autoclean
+msg_ok "Cleaned up"
