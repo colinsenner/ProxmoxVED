@@ -61,7 +61,7 @@ echo "Install complete!"
 EOF
 
 $STD chmod +x install.sh
-$STD xvfb-run ./install
+$STD xvfb-run ./install.sh
 
 # dotnet
 # msg_info "Installing dotnet SDK"
