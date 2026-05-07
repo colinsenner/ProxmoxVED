@@ -60,8 +60,11 @@ wait $WINE_PID
 echo "Install complete!"
 EOF
 
- chmod +x install.sh
-$STD xvfb-run ./install.sh
+chmod +x install.sh
+msg_info "Running UO Classic Installer"
+xvfb-run ./install.sh
+
+msg_ok "Installed UO Classic Files"
 
 # dotnet
 # msg_info "Installing dotnet SDK"
