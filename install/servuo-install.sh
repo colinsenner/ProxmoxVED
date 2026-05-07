@@ -17,15 +17,51 @@ update_os
 msg_info "Installing Dependencies"
 $STD dpkg --add-architecture i386
 $STD apt update
-$STD apt install -y git curl wget zlib1g mono-complete make libz-dev wine wine32 
+$STD apt install -y git curl wget zlib1g mono-complete make libz-dev wine wine32 xvfb
 msg_ok "Installed Dependencies"
-	
+
 # UO Client Files
 msg_info "Downloading UO Client Files"
-$STD mkdir /opt/uo && sudo chown $(whoami):$(whoami) /opt/uo
-$STD cd /opt/UO
+$STD mkdir /opt/uo && chown $(whoami):$(whoami) /opt/uo
+$STD cd /opt/uo
 $STD wget http://web.cdn.eamythic.com/us/uo/installers/20120309/UOClassicSetup_7_0_24_0.exe
-$STD WINEPREFIX="/opt/uo/" WINEARCH=win32 wine UOClassicSetup_7_0_24_0.exe /desktop=shell,1244x700
+
+# For some reason the installer doesn't respect /S /NCRC /D=... So we send the keystrokes manually
+$STD cat > install.sh << 'EOF'
+#!/usr/bin/env bash
+export WINEPREFIX=/opt/uo/.wine32
+export WINEARCH=win32
+
+# Start the installer in background
+wine UOClassicSetup_7_0_24_0.exe &
+WINE_PID=$!
+
+# Screen 1: Next
+sleep 10
+xdotool key alt+n
+
+# Screen 2: Accept license
+sleep 5
+xdotool key alt+a
+
+# Screen 3: Next
+sleep 5
+xdotool key alt+n
+
+# Screen 4: Install
+sleep 5
+xdotool key alt+i
+
+# Wait for install to complete, then Finish
+sleep 30
+xdotool key alt+f
+
+wait $WINE_PID
+echo "Install complete!"
+EOF
+
+$STD chmod +x install.sh
+$STD xvfb-run ./install
 
 # dotnet
 # msg_info "Installing dotnet SDK"
