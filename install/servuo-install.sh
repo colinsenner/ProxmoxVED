@@ -41,7 +41,7 @@ msg_ok "Installed Dependencies"
 msg_info "Downloading UO Client Files"
 $STD mkdir -p ${UO_DIR} && chown $(whoami):$(whoami) ${UO_DIR}
 $STD cd ${UO_DIR}
-wget http://web.cdn.eamythic.com/us/uo/installers/20120309/UOClassicSetup_7_0_24_0.exe
+$STD wget http://web.cdn.eamythic.com/us/uo/installers/20120309/UOClassicSetup_7_0_24_0.exe
 
 msg_info "Creating automated installer script"
 # For some reason the installer doesn't respect /S /NCRC /D=... So we send the keystrokes manually
@@ -74,23 +74,29 @@ msg_ok "Installed UO Classic Game Files"
 # Patching UO Classic to generate .mul files
 #
 msg_info "Patching UO to the latest version. This can take a while..."
-UO_CLASSIC_DIR="${UO_DIR}/drive_c/Program Files/Electronic Arts/Ultima Online Classic"
+
+# Create patch_uo.sh script
+cat >patch_uo.sh <<EOF
+#!/usr/bin/env bash
 
 cleanup_patcher() {
-  msg_info "Cleaning up patcher processes"
   kill $WINE_PID $INOTIFY_PID 2>/dev/null
   wait $WINE_PID $INOTIFY_PID 2>/dev/null
 }
 
-$STD cd "${UO_CLASSIC_DIR}"
-$STD WINEPREFIX="${UO_DIR}" WINEARCH=win32 xvfb-run wine UO.exe &
-WINE_PID=$!
+export UO_CLASSIC_DIR="${UO_DIR}/drive_c/Program Files/Electronic Arts/Ultima Online Classic"
+
+cd "${UO_CLASSIC_DIR}"
+
+# Run the patcher
+wine UO.exe &
+WINE_PID=\$!
 
 # The patcher doesn't exit after running.
 # We'll detect when it finishes by monitoring the UO Classic directory for changes, and looking for the log file it creates
 inotifywait -m -r -e close_write,create \
   --format '  [%T] %w%f' --timefmt '%H:%M:%S' \
-  "$UO_CLASSIC_DIR" 2>/dev/null &
+  "${UO_CLASSIC_DIR}" 2>/dev/null 
 INOTIFY_PID=$!
 
 SENTINEL_GLOB="${UO_CLASSIC_DIR}/logs/patcher.*.Log"
@@ -99,13 +105,11 @@ ELAPSED=0
 
 while [ $ELAPSED -lt $TIMEOUT ]; do
   if compgen -G "$SENTINEL_GLOB" >/dev/null 2>&1; then
-    msg_ok "UO patching completed"
     sleep 5
     break
   fi
   if ! kill -0 $WINE_PID 2>/dev/null; then
     cleanup_patcher
-    msg_error "UO Client exited unexpectedly before patching completed"
     exit 1
   fi
   sleep 1
@@ -115,8 +119,23 @@ done
 cleanup_patcher
 
 if [ $ELAPSED -ge $TIMEOUT ]; then
-  msg_error "Timeout reached waiting for UO patcher to complete"
+  echo "Patch timed out after $TIMEOUT seconds." 
   exit 1
+fi
+
+echo "Patch complete!"
+EOF
+
+chmod +x patch_uo.sh
+if [ -z "$(ls -A ${UO_DATA_DIR} 2>/dev/null)" ]; then
+  msg_info "Patching UO to generate .mul files"
+  xvfb-run ./patch_uo.sh
+  if [ $? -ne 0 ]; then
+    msg_error "UO patching failed. You can try running the patch_uo.sh script manually to see what went wrong. Or you can manually copy the .mul files from a patched UO Classic installation to ${UO_DATA_DIR}."
+    exit 1
+  fi
+else
+  msg_ok "UO data files already present, skipping patching"
 fi
 
 # dotnet
