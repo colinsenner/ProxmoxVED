@@ -26,6 +26,7 @@ UO_DATA_DIR="${APP_DIR}/UO_DATA"
 DATAPATH_CONFIG="${APP_DIR}/Config/DataPath.cfg"
 
 # Wine variables
+export UO_DIR
 export WINEPREFIX="${UO_DIR}"
 export WINEARCH=win32
 
@@ -80,46 +81,45 @@ cat >patch_uo.sh <<EOF
 #!/usr/bin/env bash
 
 cleanup_patcher() {
-  kill $WINE_PID $INOTIFY_PID 2>/dev/null
-  wait $WINE_PID $INOTIFY_PID 2>/dev/null
+  kill \$WINE_PID \$INOTIFY_PID 2>/dev/null
+  wait \$WINE_PID \$INOTIFY_PID 2>/dev/null
 }
 
 export UO_CLASSIC_DIR="${UO_DIR}/drive_c/Program Files/Electronic Arts/Ultima Online Classic"
-
 cd "${UO_CLASSIC_DIR}"
 
 # Run the patcher
 wine UO.exe &
-WINE_PID=\$!
+WINE_PID=$!
 
 # The patcher doesn't exit after running.
 # We'll detect when it finishes by monitoring the UO Classic directory for changes, and looking for the log file it creates
 inotifywait -m -r -e close_write,create \
   --format '  [%T] %w%f' --timefmt '%H:%M:%S' \
-  "${UO_CLASSIC_DIR}" 2>/dev/null 
+  "${UO_CLASSIC_DIR}" 2>/dev/null &
 INOTIFY_PID=$!
 
 SENTINEL_GLOB="${UO_CLASSIC_DIR}/logs/patcher.*.Log"
 TIMEOUT=1800 # 30 minutes
 ELAPSED=0
 
-while [ $ELAPSED -lt $TIMEOUT ]; do
-  if compgen -G "$SENTINEL_GLOB" >/dev/null 2>&1; then
+while [ \$ELAPSED -lt \$TIMEOUT ]; do
+  if compgen -G "\$SENTINEL_GLOB" >/dev/null 2>&1; then
     sleep 5
     break
   fi
-  if ! kill -0 $WINE_PID 2>/dev/null; then
+  if ! kill -0 \$WINE_PID 2>/dev/null; then
     cleanup_patcher
     exit 1
   fi
   sleep 1
-  ELAPSED=$((ELAPSED + 1))
+  ELAPSED=\$((ELAPSED + 1))
 done
 
 cleanup_patcher
 
-if [ $ELAPSED -ge $TIMEOUT ]; then
-  echo "Patch timed out after $TIMEOUT seconds." 
+if [ \$ELAPSED -ge \$TIMEOUT ]; then
+  echo "Patch timed out after \$TIMEOUT seconds."
   exit 1
 fi
 
