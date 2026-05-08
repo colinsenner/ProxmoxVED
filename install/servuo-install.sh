@@ -77,15 +77,15 @@ msg_ok "Installed UO Classic Game Files"
 msg_info "Patching UO to the latest version. This can take a while..."
 
 # Create patch_uo.sh script
-cat >patch_uo.sh <<EOF
+cat >patch_uo.sh <<'EOF'
 #!/usr/bin/env bash
 
 cleanup_patcher() {
-  kill \$WINE_PID \$INOTIFY_PID 2>/dev/null
-  wait \$WINE_PID \$INOTIFY_PID 2>/dev/null
+  kill $WINE_PID $INOTIFY_PID 2>/dev/null
+  wait $WINE_PID $INOTIFY_PID 2>/dev/null
 }
 
-export UO_CLASSIC_DIR="${UO_DIR}/drive_c/Program Files/Electronic Arts/Ultima Online Classic"
+UO_CLASSIC_DIR="${UO_DIR}/drive_c/Program Files/Electronic Arts/Ultima Online Classic"
 cd "${UO_CLASSIC_DIR}"
 
 # Run the patcher
@@ -103,23 +103,23 @@ SENTINEL_GLOB="${UO_CLASSIC_DIR}/logs/patcher.*.Log"
 TIMEOUT=1800 # 30 minutes
 ELAPSED=0
 
-while [ \$ELAPSED -lt \$TIMEOUT ]; do
-  if compgen -G "\$SENTINEL_GLOB" >/dev/null 2>&1; then
+while [ $ELAPSED -lt $TIMEOUT ]; do
+  if compgen -G "$SENTINEL_GLOB" >/dev/null 2>&1; then
     sleep 5
     break
   fi
-  if ! kill -0 \$WINE_PID 2>/dev/null; then
+  if ! kill -0 $WINE_PID 2>/dev/null; then
     cleanup_patcher
     exit 1
   fi
   sleep 1
-  ELAPSED=\$((ELAPSED + 1))
+  ELAPSED=$((ELAPSED + 1))
 done
 
 cleanup_patcher
 
-if [ \$ELAPSED -ge \$TIMEOUT ]; then
-  echo "Patch timed out after \$TIMEOUT seconds."
+if [ $ELAPSED -ge $TIMEOUT ]; then
+  echo "Patch timed out after $TIMEOUT seconds."
   exit 1
 fi
 
