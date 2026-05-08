@@ -63,7 +63,7 @@ xvfb-run ./install.sh
 msg_ok "Installed UO Classic Game Files"
 
 msg_info "Running UO Client to generate .mul files, and patch UO to the latest version..."
-$STD xvfb-run wine ${UO_DIR}/drive_c/Program\ Files/Electronic\ Arts/Ultima\ Online\ Classic/UO.exe
+$STD xvfb-run wine "${UO_DIR}/drive_c/Program\ Files/Electronic\ Arts/Ultima\ Online\ Classic/UO.exe"
 
 # dotnet
 # msg_info "Installing dotnet SDK"
