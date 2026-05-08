@@ -14,13 +14,16 @@ setting_up_container
 network_check
 update_os
 
+# We have to do several things to get this working
+# 1. Install and run UO Classic to generate the .mul files, by patching it to the latest version
+# 2. Copy the .mul files to the ServUO directory, and set the custom path in the ServUO config
+# 3. Build and run ServUO
+
 # Application specific directories
 APP_DIR="/opt/ServUO"
 UO_DIR="/opt/uo"
 UO_DATA_DIR="${APP_DIR}/UO_DATA"
 DATAPATH_CONFIG="${APP_DIR}/Config/DataPath.cfg"
-WINEPREFIX="/opt/uo/"
-WINEARCH=win32
 
 msg_info "Installing Dependencies"
 $STD dpkg --add-architecture i386
@@ -28,20 +31,24 @@ $STD apt update
 $STD apt install -y git curl wget zlib1g mono-complete make libz-dev wine wine32 xvfb xdotool
 msg_ok "Installed Dependencies"
 
-# UO Client Files
+#
+# UO Classic Installation and Patching
+#
 msg_info "Downloading UO Client Files"
-$STD mkdir ${UO_DIR} && chown $(whoami):$(whoami) ${UO_DIR}
+$STD mkdir -p ${UO_DIR} && chown $(whoami):$(whoami) ${UO_DIR}
 $STD cd ${UO_DIR}
 wget http://web.cdn.eamythic.com/us/uo/installers/20120309/UOClassicSetup_7_0_24_0.exe
 
 msg_info "Creating automated installer script"
 # For some reason the installer doesn't respect /S /NCRC /D=... So we send the keystrokes manually
-cat >install.sh <<'EOF'
+cat >install_uo.sh <<EOF
 #!/usr/bin/env bash
 
-# Start the installer in background
+WINEPREFIX="${UO_DIR}"
+WINEARCH=win32
+
 wine UOClassicSetup_7_0_24_0.exe &
-WINE_PID=$!
+WINE_PID=\$!
 
 sleep 10  # Screen 1: Next
 xdotool key alt+n
@@ -57,13 +64,58 @@ xdotool key alt+f
 echo "Install complete!"
 EOF
 
-chmod +x install.sh
+chmod +x install_uo.sh
 msg_info "Installing UO Classic Game Files"
-xvfb-run ./install.sh
+$STD xvfb-run ./install_uo.sh
 msg_ok "Installed UO Classic Game Files"
 
-msg_info "Running UO Client to generate .mul files, and patch UO to the latest version..."
-$STD xvfb-run wine "${UO_DIR}/drive_c/Program\ Files/Electronic\ Arts/Ultima\ Online\ Classic/UO.exe"
+#
+# Patching UO Classic to generate .mul files
+#
+msg_info "Patching UO to the latest version. This can take a while..."
+UO_CLASSIC_DIR="${UO_DIR}/drive_c/Program Files/Electronic Arts/Ultima Online Classic"
+
+cleanup_patcher() {
+  msg_info "Cleaning up patcher processes"
+  kill $WINE_PID $INOTIFY_PID 2>/dev/null
+  wait $WINE_PID $INOTIFY_PID 2>/dev/null
+}
+
+$STD xvfb-run wine "${UO_CLASSIC_DIR}/UO.exe" &
+WINE_PID=$!
+
+# The patcher doesn't exit after running.
+# We'll detect when it finishes by monitoring the UO Classic directory for changes, and looking for the log file it creates
+inotifywait -m -r -e close_write,create \
+  --format '  [%T] %w%f' --timefmt '%H:%M:%S' \
+  "$UO_CLASSIC_DIR" 2>/dev/null &
+INOTIFY_PID=$!
+
+SENTINEL_GLOB="${UO_CLASSIC_DIR}/logs/patcher.*.Log"
+TIMEOUT=1800 # 30 minutes
+ELAPSED=0
+
+while [ $ELAPSED -lt $TIMEOUT ]; do
+  if compgen -G "$SENTINEL_GLOB" >/dev/null 2>&1; then
+    msg_ok "UO patching completed"
+    sleep 5
+    break
+  fi
+  if ! kill -0 $WINE_PID 2>/dev/null; then
+    cleanup_patcher
+    msg_error "UO Client exited unexpectedly before patching completed"
+    exit 1
+  fi
+  sleep 1
+  ELAPSED=$((ELAPSED + 1))
+done
+
+cleanup_patcher
+
+if [ $ELAPSED -ge $TIMEOUT ]; then
+  msg_error "Timeout reached waiting for UO patcher to complete"
+  exit 1
+fi
 
 # dotnet
 # msg_info "Installing dotnet SDK"
