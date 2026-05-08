@@ -44,8 +44,8 @@ msg_info "Creating automated installer script"
 cat >install_uo.sh <<EOF
 #!/usr/bin/env bash
 
-WINEPREFIX="${UO_DIR}"
-WINEARCH=win32
+export WINEPREFIX="${UO_DIR}"
+export WINEARCH=win32
 
 wine UOClassicSetup_7_0_24_0.exe &
 WINE_PID=\$!
