@@ -25,6 +25,10 @@ UO_DIR="/opt/uo"
 UO_DATA_DIR="${APP_DIR}/UO_DATA"
 DATAPATH_CONFIG="${APP_DIR}/Config/DataPath.cfg"
 
+# Wine variables
+export WINEPREFIX="${UO_DIR}"
+export WINEARCH=win32
+
 msg_info "Installing Dependencies"
 $STD dpkg --add-architecture i386
 $STD apt update
@@ -43,9 +47,6 @@ msg_info "Creating automated installer script"
 # For some reason the installer doesn't respect /S /NCRC /D=... So we send the keystrokes manually
 cat >install_uo.sh <<EOF
 #!/usr/bin/env bash
-
-export WINEPREFIX="${UO_DIR}"
-export WINEARCH=win32
 
 wine UOClassicSetup_7_0_24_0.exe &
 WINE_PID=\$!
@@ -81,7 +82,8 @@ cleanup_patcher() {
   wait $WINE_PID $INOTIFY_PID 2>/dev/null
 }
 
-$STD xvfb-run wine "${UO_CLASSIC_DIR}/UO.exe" &
+$STD cd "${UO_CLASSIC_DIR}"
+$STD WINEPREFIX="${UO_DIR}" WINEARCH=win32 xvfb-run wine UO.exe &
 WINE_PID=$!
 
 # The patcher doesn't exit after running.
