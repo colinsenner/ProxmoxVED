@@ -78,51 +78,55 @@ msg_ok "Installed UO Classic Game Files"
 #
 msg_info "Patching UO to the latest version. This can take a while..."
 
-# Create patch_uo.sh script — just runs the UO patcher under Wine
-cat >patch_uo.sh <<'EOF'
+# Create patch_uo.sh — runs UO patcher under Wine and waits for sentinel log
+cat >patch_uo.sh <<EOF
 #!/usr/bin/env bash
+
+cleanup() {
+  kill \$WINE_PID \$INOTIFY_PID 2>/dev/null
+  wait \$WINE_PID \$INOTIFY_PID 2>/dev/null
+}
+
 cd "${UO_CLASSIC_DIR}"
-wine UO.exe
-EOF
 
-chmod +x patch_uo.sh
-SENTINEL_GLOB="${UO_CLASSIC_DIR}/logs/patcher.*.Log"
-
-msg_info "Patching UO to generate .mul files"
-$STD xvfb-run ./patch_uo.sh &
-PATCH_PID=$!
+xvfb-run wine UO.exe &
+WINE_PID=$!
 
 inotifywait -r -e close_write,create \
   --format '[%T] %w%f' --timefmt '%H:%M:%S' \
   "${UO_CLASSIC_DIR}" 2>/dev/null &
 INOTIFY_PID=$!
 
+SENTINEL_GLOB="${UO_CLASSIC_DIR}/logs/patcher.*.Log"
 TIMEOUT=1800
 ELAPSED=0
-while [ $ELAPSED -lt $TIMEOUT ]; do
-  if compgen -G "$SENTINEL_GLOB" >/dev/null 2>&1; then
-    msg_info "UO patcher log detected, waiting a few seconds for patching to complete..."
+
+while [ \$ELAPSED -lt \$TIMEOUT ]; do
+  if compgen -G "\$SENTINEL_GLOB" >/dev/null 2>&1; then
     sleep 3
     break
   fi
-  if ! kill -0 $PATCH_PID 2>/dev/null; then
-    kill $INOTIFY_PID 2>/dev/null
-    wait $INOTIFY_PID 2>/dev/null
-    msg_error "UO patcher exited unexpectedly before patching completed"
+  if ! kill -0 \$WINE_PID 2>/dev/null; then
+    cleanup
     exit 1
   fi
   sleep 1
   ELAPSED=$((ELAPSED + 1))
 done
 
-kill $PATCH_PID $INOTIFY_PID 2>/dev/null
-wait $PATCH_PID $INOTIFY_PID 2>/dev/null
+cleanup
 
-if [ $ELAPSED -ge $TIMEOUT ]; then
-  msg_error "Timeout reached waiting for UO patcher to complete"
+if [ \$ELAPSED -ge \$TIMEOUT ]; then
   exit 1
 fi
+EOF
 
+chmod +x patch_uo.sh
+msg_info "Patching UO to generate .mul files"
+if ! ./patch_uo.sh; then
+  msg_error "UO patching failed. Try running patch_uo.sh manually or copy .mul files from a patched UO Classic install to ${UO_DATA_DIR}."
+  exit 1
+fi
 msg_ok "UO patching completed"
 
 # dotnet
