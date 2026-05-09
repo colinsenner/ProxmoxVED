@@ -140,39 +140,40 @@ msg_info "Setting the custom path in ServUO ${DATAPATH_CONFIG}"
 $STD sed -i "s|^#CustomPath=.*|CustomPath=${UO_DATA_DIR}|" "${DATAPATH_CONFIG}"
 msg_ok "Set the custom path in ServUO ${DATAPATH_CONFIG}"
 
-# msg_info "Creating Service"
-# cat <<EOF >/etc/systemd/system/servuo.service
-# [Unit]
-# Description=ServUO Ultima Online Server
-# After=network.target
+msg_info "Creating Service"
+cat <<EOF >/etc/systemd/system/servuo.service
+[Unit]
+Description=ServUO Ultima Online Server
+After=network.target
 
-# [Service]
-# WorkingDirectory=${APP_DIR}
-# ExecStart=/usr/bin/mono ${APP_DIR}/ServUO.exe
-# Restart=always
+[Service]
+WorkingDirectory=${APP_DIR}
+ExecStart=/usr/bin/mono ${APP_DIR}/ServUO.exe
+Restart=always
 
-# [Install]
-# WantedBy=multi-user.target
-# EOF
+[Install]
+WantedBy=multi-user.target
+EOF
 
-# systemctl enable -q --now servuo.service
-# msg_ok "Created Service"
+msg_info "Building ServUO"
+$STD cd ${APP_DIR}
+$STD make build release
+msg_ok "Built ServUO"
 
-# msg_info "Building ServUO"
-# $STD cd ${APP_DIR}
-# $STD make build release
-# msg_ok "Built ServUO"
+motd_ssh
+customize
 
-# motd_ssh
-# customize
+cat >>/etc/motd <<EOF
 
-# cat >>/etc/motd <<EOF
+ ServUO Port: 2593
+ Docs: https://github.com/ServUO/ServUO/wiki
+EOF
 
-#  ServUO Port: 2593
-#  Docs: https://github.com/ServUO/ServUO/wiki
-# EOF
+msg_info "Cleaning up"
+$STD apt-get -y autoremove
+$STD apt-get -y autoclean
+msg_ok "Cleaned up"
 
-# msg_info "Cleaning up"
-# $STD apt-get -y autoremove
-# $STD apt-get -y autoclean
-# msg_ok "Cleaned up"
+# Start the server
+systemctl enable -q --now servuo.service
+msg_ok "Started ServUO service"
