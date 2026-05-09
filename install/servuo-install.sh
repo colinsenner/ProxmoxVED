@@ -109,7 +109,7 @@ PATCH_SUCCESS=false
 while [ $PATCH_ELAPSED -lt $PATCH_TIMEOUT ]; do
   # Check for the patch completion log entry
   for log in "$UO_CLASSIC_DIR"/logs/patcher.*.Log; do
-    if [ -f "$log" ] && grep -q "Patch Operation Complete." "$log"; then
+    if [ -f "$log" ] && grep -qa "Patch Operation Complete" "$log"; then
       PATCH_SUCCESS=true
       break 2
     fi
@@ -133,7 +133,7 @@ msg_ok "Cloned ServUO"
 
 msg_info "Copying UO Client Files to ${UO_DATA_DIR}"
 $STD mkdir -p ${UO_DATA_DIR}
-$STD cp "$UO_CLASSIC_DIR/*.mul" ${UO_DATA_DIR}/
+$STD cp "$UO_CLASSIC_DIR"/*.mul ${UO_DATA_DIR}/
 msg_ok "Copied UO Client Files"
 
 msg_info "Setting the custom path in ServUO ${DATAPATH_CONFIG}"
