@@ -22,15 +22,18 @@ update_os
 # Application specific directories
 APP_DIR="/opt/ServUO"
 UO_DIR="/opt/uo"
-UO_CLASSIC_DIR="${UO_DIR}/drive_c/Program Files/Electronic Arts/Ultima Online Classic"
 UO_DATA_DIR="${APP_DIR}/UO_DATA"
-DATAPATH_CONFIG="${APP_DIR}/Config/DataPath.cfg"
 
-# Wine variables
-export UO_DIR
-export UO_CLASSIC_DIR
+cat >$HOME/uo-env.sh <<EOF
+export APP_DIR="${APP_DIR}"
+export UO_DIR="${UO_DIR}"
+export UO_CLASSIC_DIR="${UO_DIR}/drive_c/Program Files/Electronic Arts/Ultima Online Classic"
+export UO_DATA_DIR="${UO_DATA_DIR}"
+export DATAPATH_CONFIG="${APP_DIR}/Config/DataPath.cfg"
 export WINEPREFIX="${UO_DIR}"
 export WINEARCH=win32
+EOF
+$STD source $HOME/uo-env.sh
 
 msg_info "Installing Dependencies"
 $STD dpkg --add-architecture i386
@@ -48,11 +51,12 @@ $STD wget http://web.cdn.eamythic.com/us/uo/installers/20120309/UOClassicSetup_7
 
 msg_info "Creating automated installer script"
 # For some reason the installer doesn't respect /S /NCRC /D=... So we send the keystrokes manually
-cat >install_uo.sh <<EOF
+cat >install_uo.sh <<'EOF'
 #!/usr/bin/env bash
+source /root/uo-env.sh
 
 wine UOClassicSetup_7_0_24_0.exe &
-WINE_PID=\$!
+WINE_PID=$!
 
 sleep 10  # Screen 1: Next
 xdotool key alt+n
@@ -79,34 +83,35 @@ msg_ok "Installed UO Classic Game Files"
 msg_info "Patching UO to the latest version. This can take a while..."
 
 # Create patch_uo.sh — runs UO patcher under Wine and waits for sentinel log
-cat >patch_uo.sh <<EOF
+cat >patch_uo.sh <<'EOF'
 #!/usr/bin/env bash
+source /root/uo-env.sh
 
 cleanup() {
-  kill \$WINE_PID \$INOTIFY_PID 2>/dev/null
-  wait \$WINE_PID \$INOTIFY_PID 2>/dev/null
+  kill $WINE_PID $INOTIFY_PID 2>/dev/null
+  wait $WINE_PID $INOTIFY_PID 2>/dev/null
 }
 
-cd "${UO_CLASSIC_DIR}"
+cd "$UO_CLASSIC_DIR"
 
 xvfb-run wine UO.exe &
 WINE_PID=$!
 
 inotifywait -r -e close_write,create \
   --format '[%T] %w%f' --timefmt '%H:%M:%S' \
-  "${UO_CLASSIC_DIR}" 2>/dev/null &
+  "$UO_CLASSIC_DIR" 2>/dev/null &
 INOTIFY_PID=$!
 
-SENTINEL_GLOB="${UO_CLASSIC_DIR}/logs/patcher.*.Log"
+SENTINEL_GLOB="$UO_CLASSIC_DIR/logs/patcher.*.Log"
 TIMEOUT=1800
 ELAPSED=0
 
-while [ \$ELAPSED -lt \$TIMEOUT ]; do
-  if compgen -G "\$SENTINEL_GLOB" >/dev/null 2>&1; then
+while [ $ELAPSED -lt $TIMEOUT ]; do
+  if compgen -G "$SENTINEL_GLOB" >/dev/null 2>&1; then
     sleep 3
     break
   fi
-  if ! kill -0 \$WINE_PID 2>/dev/null; then
+  if ! kill -0 $WINE_PID 2>/dev/null; then
     cleanup
     exit 1
   fi
@@ -116,14 +121,14 @@ done
 
 cleanup
 
-if [ \$ELAPSED -ge \$TIMEOUT ]; then
+if [ $ELAPSED -ge $TIMEOUT ]; then
   exit 1
 fi
 EOF
 
 chmod +x patch_uo.sh
 msg_info "Patching UO to generate .mul files"
-if ! ./patch_uo.sh; then
+if ! xvfb-run ./patch_uo.sh; then
   msg_error "UO patching failed. Try running patch_uo.sh manually or copy .mul files from a patched UO Classic install to ${UO_DATA_DIR}."
   exit 1
 fi
