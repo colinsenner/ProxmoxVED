@@ -82,56 +82,34 @@ msg_ok "Installed UO Classic Game Files"
 #
 # Patching UO Classic to generate .mul files
 #
-msg_info "Patching UO to the latest version. This can take a while..."
-
-# Create patch_uo.sh — runs UO patcher under Wine and waits for sentinel log
-cat >patch_uo.sh <<'EOF'
-#!/usr/bin/env bash
-source ~/uo-env.sh
-
-cleanup() {
-  kill $WINE_PID $INOTIFY_PID 2>/dev/null
-  wait $WINE_PID $INOTIFY_PID 2>/dev/null
-}
-
+msg_info "Patching UO to generate .mul files (this can take up to 30 minutes)..."
 cd "$UO_CLASSIC_DIR"
 
 xvfb-run wine UO.exe &
 WINE_PID=$!
 
-inotifywait -r -e close_write,create \
-  --format '[%T] %w%f' --timefmt '%H:%M:%S' \
-  "$UO_CLASSIC_DIR" 2>/dev/null &
+inotifywait -m -r "$UO_CLASSIC_DIR" --format '%w%f' 2>/dev/null |
+  awk '{ if ($0 != last) { print "Patching: " $0; last = $0; fflush() } }' &
 INOTIFY_PID=$!
 
-SENTINEL_GLOB="$UO_CLASSIC_DIR/logs/patcher.*.Log"
-TIMEOUT=1800
-ELAPSED=0
+PATCH_TIMEOUT=1800
+PATCH_ELAPSED=0
+PATCH_SUCCESS=false
 
-while [ $ELAPSED -lt $TIMEOUT ]; do
-  if compgen -G "$SENTINEL_GLOB" >/dev/null 2>&1; then
-    sleep 3
+while [ $PATCH_ELAPSED -lt $PATCH_TIMEOUT ]; do
+  if grep -ql "Patch Operation Complete." "$UO_CLASSIC_DIR"/logs/patcher.*.Log 2>/dev/null; then
+    PATCH_SUCCESS=true
     break
   fi
-  if ! kill -0 $WINE_PID 2>/dev/null; then
-    cleanup
-    exit 1
-  fi
-  sleep 1
-  ELAPSED=$((ELAPSED + 1))
+  sleep 5
+  PATCH_ELAPSED=$((PATCH_ELAPSED + 5))
 done
 
-cleanup
+kill $WINE_PID $INOTIFY_PID 2>/dev/null
+wait $WINE_PID $INOTIFY_PID 2>/dev/null
 
-if [ $ELAPSED -ge $TIMEOUT ]; then
-  exit 1
-fi
-EOF
-
-chmod +x patch_uo.sh
-msg_info "Patching UO to generate .mul files"
-if ! xvfb-run ./patch_uo.sh; then
-  msg_error "UO patching failed. Try running patch_uo.sh manually or copy .mul files from a patched UO Classic install to ${UO_DATA_DIR}."
+if [ "$PATCH_SUCCESS" != "true" ]; then
+  msg_error "UO patching timed out. Copy .mul files from a patched UO Classic install to ${UO_DATA_DIR} and re-run."
   exit 1
 fi
 msg_ok "UO patching completed"
