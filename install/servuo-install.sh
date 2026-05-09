@@ -14,24 +14,9 @@ setting_up_container
 network_check
 update_os
 
-# We have to do several things to get this working
-# 1. Install and run UO Classic to generate the .mul files, by patching it to the latest version
-# 2. Copy the .mul files to the ServUO directory, and set the custom path in the ServUO config
-# 3. Build and run ServUO
-
-# Application specific directories
-APP_DIR="/opt/ServUO"
-UO_DIR="/opt/uo"
-UO_DATA_DIR="${APP_DIR}/UO_DATA"
-
-# Environment variables for setup
-cat >~/uo-env.sh <<EOF
-export APP_DIR="${APP_DIR}"
-export UO_DIR="${UO_DIR}"
-export UO_CLASSIC_DIR="${UO_DIR}/drive_c/Program Files/Electronic Arts/Ultima Online Classic"
-export UO_DATA_DIR="${UO_DATA_DIR}"
-export DATAPATH_CONFIG="${APP_DIR}/Config/DataPath.cfg"
-export WINEPREFIX="${UO_DIR}"
+# Wine environment for interactive shells and child scripts
+cat >~/uo-env.sh <<'EOF'
+export WINEPREFIX=/opt/uo
 export WINEARCH=win32
 EOF
 echo "source ~/uo-env.sh" >>~/.bashrc
@@ -56,8 +41,8 @@ msg_ok "Installed dotnet SDK"
 # UO Classic Installation and Patching
 #
 msg_info "Downloading UO Client Files"
-$STD mkdir -p ${UO_DIR} && chown $(whoami):$(whoami) ${UO_DIR}
-$STD cd ${UO_DIR}
+$STD mkdir -p /opt/uo && chown $(whoami):$(whoami) /opt/uo
+cd /opt/uo
 $STD wget http://web.cdn.eamythic.com/us/uo/installers/20120309/UOClassicSetup_7_0_24_0.exe
 
 msg_info "Creating automated installer script"
@@ -65,6 +50,7 @@ msg_info "Creating automated installer script"
 cat >install_uo.sh <<'EOF'
 #!/usr/bin/env bash
 source ~/uo-env.sh
+cd /opt/uo
 
 wine UOClassicSetup_7_0_24_0.exe &
 WINE_PID=$!
@@ -92,13 +78,13 @@ msg_ok "Installed UO Classic Game Files"
 # Patching UO Classic to generate .mul files
 #
 msg_info "Patching UO to generate .mul files (this can take up to 30 minutes)..."
-cd "$UO_CLASSIC_DIR"
+cd "/opt/uo/drive_c/Program Files/Electronic Arts/Ultima Online Classic"
 
 $STD xvfb-run wine UO.exe &
 WINE_PID=$!
 
 # Give the user feedback about the patch process, so they know it's working by watching the directory for changes
-inotifywait -m -r "$UO_CLASSIC_DIR" --format '%w%f' 2>/dev/null |
+inotifywait -m -r "/opt/uo/drive_c/Program Files/Electronic Arts/Ultima Online Classic" --format '%w%f' 2>/dev/null |
   awk '/\.(uop|mul|def|mp3|txt)$/ { if ($0 != last) { print "Patching: " $0; last = $0; fflush() } }' &
 INOTIFY_PID=$!
 
@@ -107,8 +93,7 @@ PATCH_ELAPSED=0
 PATCH_SUCCESS=false
 
 while [ $PATCH_ELAPSED -lt $PATCH_TIMEOUT ]; do
-  # Check for the patch completion log entry
-  for log in "$UO_CLASSIC_DIR"/logs/patcher.*.Log; do
+  for log in "/opt/uo/drive_c/Program Files/Electronic Arts/Ultima Online Classic"/logs/patcher.*.Log; do
     if [ -f "$log" ] && grep -qa "Patch Operation Complete" "$log"; then
       PATCH_SUCCESS=true
       break 2
@@ -124,7 +109,7 @@ pkill -f "UO.bin" 2>/dev/null || true
 wait $WINE_PID $INOTIFY_PID 2>/dev/null || true
 
 if [ "$PATCH_SUCCESS" != "true" ]; then
-  msg_error "UO patching timed out. You can manually copy all *.mul files from a patched UO Classic install to ${UO_DATA_DIR}."
+  msg_error "UO patching timed out. You can manually copy all *.mul files from a patched UO Classic install to /opt/ServUO/UO_DATA."
   exit 1
 fi
 msg_ok "UO patching completed"
@@ -142,25 +127,25 @@ msg_ok "Owner account: ${ACCOUNT_USER}"
 msg_ok "Shard name:    ${SHARD_NAME}"
 
 msg_info "Cloning ServUO"
-$STD git clone --depth 1 https://github.com/ServUO/ServUO.git ${APP_DIR}
+$STD git clone --depth 1 https://github.com/ServUO/ServUO.git /opt/ServUO
 msg_ok "Cloned ServUO"
 
-msg_info "Copying UO Client Files to ${UO_DATA_DIR}"
-$STD mkdir -p ${UO_DATA_DIR}
-$STD cp "$UO_CLASSIC_DIR"/*.mul ${UO_DATA_DIR}/
+msg_info "Copying UO Client Files to /opt/ServUO/UO_DATA"
+$STD mkdir -p /opt/ServUO/UO_DATA
+$STD cp "/opt/uo/drive_c/Program Files/Electronic Arts/Ultima Online Classic"/*.mul /opt/ServUO/UO_DATA/
 msg_ok "Copied UO Client Files"
 
-msg_info "Setting the custom path in ServUO ${DATAPATH_CONFIG}"
-$STD sed -i "s|^#CustomPath=.*|CustomPath=${UO_DATA_DIR}|" "${DATAPATH_CONFIG}"
-msg_ok "Set the custom path in ServUO ${DATAPATH_CONFIG}"
+msg_info "Setting the custom path in ServUO"
+$STD sed -i "s|^#CustomPath=.*|CustomPath=/opt/ServUO/UO_DATA|" /opt/ServUO/Config/DataPath.cfg
+msg_ok "Set the custom path in ServUO"
 
 msg_info "Setting shard name in Server.cfg"
-$STD sed -i "s|^Name=.*|Name=${SHARD_NAME}|" "${APP_DIR}"/Config/Server.cfg
+$STD sed -i "s|^Name=.*|Name=${SHARD_NAME}|" /opt/ServUO/Config/Server.cfg
 msg_ok "Set shard name in Server.cfg"
 
 msg_info "Building ServUO"
-$STD cd ${APP_DIR}
-$STD printf "y\n%s\n%s\n" "$ACCOUNT_USER" "$ACCOUNT_PASS" | make build release
+cd /opt/ServUO
+printf "y\n%s\n%s\n" "$ACCOUNT_USER" "$ACCOUNT_PASS" | $STD make build release
 msg_ok "Built ServUO"
 
 motd_ssh
@@ -172,13 +157,13 @@ $STD apt-get -y autoclean
 msg_ok "Cleaned up"
 
 msg_info "Creating Service"
-cat <<EOF >/etc/systemd/system/servuo.service
+cat <<'EOF' >/etc/systemd/system/servuo.service
 [Unit]
 Description=ServUO Ultima Online Server
 After=network.target
 
 [Service]
-WorkingDirectory=${APP_DIR}
+WorkingDirectory=/opt/ServUO
 ExecStart=/usr/bin/mono ServUO.exe
 Restart=always
 
