@@ -34,5 +34,11 @@ description
 
 msg_ok "Completed successfully!\n"
 echo -e "${CREATING}${GN}${APP} setup has been successfully initialized!${CL}"
-echo -e "${INFO}${YW} Access it using the following URL:${CL}"
-echo -e "${TAB}${GATEWAY}${BGN}http://${IP}:[PORT]${CL}"
+echo -e "${INFO}${YW}Next steps:${CL}"
+echo -e "${INFO}${YW} 1. Download the official UO Classic client:${CL}"
+echo -e "${INFO}${YW}    https://uo.com/client-download/{CL}"
+echo -e "${INFO}${YW} 2. Run UO.exe from the downloaded client to fully patch UO${CL}"
+echo -e "${INFO}${YW} 3. Download a modern UO client which will allow you to connect to unofficial servers:${CL}"
+echo -e "${INFO}${YW}    https://www.classicuo.eu/${CL}"
+echo -e "${INFO}${YW} 4. Add a profile in the modern client: ${CL}"
+echo -e "${TAB}${GATEWAY}${BGN}${IP} Port: 2593${CL}"

@@ -118,7 +118,9 @@ while [ $PATCH_ELAPSED -lt $PATCH_TIMEOUT ]; do
   PATCH_ELAPSED=$((PATCH_ELAPSED + 5))
 done
 
+# Cleanup patching processes
 kill $WINE_PID $INOTIFY_PID 2>/dev/null
+pkill -f "UO.bin" 2>/dev/null || true
 wait $WINE_PID $INOTIFY_PID 2>/dev/null || true
 
 if [ "$PATCH_SUCCESS" != "true" ]; then
@@ -126,6 +128,18 @@ if [ "$PATCH_SUCCESS" != "true" ]; then
   exit 1
 fi
 msg_ok "UO patching completed"
+
+msg_info "Customize server settings"
+read -r -p "Enter owner account username [default: admin]: " ACCOUNT_USER
+ACCOUNT_USER=${ACCOUNT_USER:-admin}
+echo -n "Enter owner account password [default: admin]: "
+ACCOUNT_PASS=${ACCOUNT_PASS:-admin}
+read -rs ACCOUNT_PASS
+echo ""
+read -r -p "Enter shard name [default: My Shard]: " SHARD_NAME
+SHARD_NAME=${SHARD_NAME:-My Shard}
+msg_ok "Owner account: ${ACCOUNT_USER}"
+msg_ok "Shard name:    ${SHARD_NAME}"
 
 msg_info "Cloning ServUO"
 $STD git clone --depth 1 https://github.com/ServUO/ServUO.git ${APP_DIR}
@@ -140,6 +154,23 @@ msg_info "Setting the custom path in ServUO ${DATAPATH_CONFIG}"
 $STD sed -i "s|^#CustomPath=.*|CustomPath=${UO_DATA_DIR}|" "${DATAPATH_CONFIG}"
 msg_ok "Set the custom path in ServUO ${DATAPATH_CONFIG}"
 
+msg_info "Setting shard name in Server.cfg"
+$STD sed -i "s|^Name=.*|Name=${SHARD_NAME}|" "${APP_DIR}"/Config/Server.cfg
+msg_ok "Set shard name in Server.cfg"
+
+msg_info "Building ServUO"
+$STD cd ${APP_DIR}
+$STD printf "y\n%s\n%s\n" "$ACCOUNT_USER" "$ACCOUNT_PASS" | make build release
+msg_ok "Built ServUO"
+
+motd_ssh
+customize
+
+msg_info "Cleaning up"
+$STD apt-get -y autoremove
+$STD apt-get -y autoclean
+msg_ok "Cleaned up"
+
 msg_info "Creating Service"
 cat <<EOF >/etc/systemd/system/servuo.service
 [Unit]
@@ -148,32 +179,32 @@ After=network.target
 
 [Service]
 WorkingDirectory=${APP_DIR}
-ExecStart=/usr/bin/mono ${APP_DIR}/ServUO.exe
+ExecStart=/usr/bin/mono ServUO.exe
 Restart=always
 
 [Install]
 WantedBy=multi-user.target
 EOF
 
-msg_info "Building ServUO"
-$STD cd ${APP_DIR}
-$STD make build release
-msg_ok "Built ServUO"
-
-motd_ssh
-customize
-
-cat >>/etc/motd <<EOF
-
- ServUO Port: 2593
- Docs: https://github.com/ServUO/ServUO/wiki
-EOF
-
-msg_info "Cleaning up"
-$STD apt-get -y autoremove
-$STD apt-get -y autoclean
-msg_ok "Cleaned up"
-
 # Start the server
 systemctl enable -q --now servuo.service
 msg_ok "Started ServUO service"
+
+cat >>/etc/motd <<EOF
+
+ ServUO Ultima Online Server - ${SHARD_NAME}
+ --------------------------------
+ Game Port : 2593
+ Shard     : ${SHARD_NAME}
+ Owner     : ${ACCOUNT_USER}
+
+ Docs: https://github.com/ServUO/ServUO/wiki
+EOF
+
+cat >>/etc/profile.d/00_lxc-details.sh <<EOF
+
+echo -e " \${YW}ServUO Port:\${CL} \${GN}2593\${CL}"
+echo -e " \${YW}Owner Account:\${CL} \${GN}${ACCOUNT_USER}\${CL}"
+echo -e " \${YW}Shard Name:\${CL} \${GN}${SHARD_NAME}\${CL}"
+echo -e " \${YW}Docs:\${CL} \${GN}https://github.com/ServUO/ServUO/wiki\${CL}"
+EOF
