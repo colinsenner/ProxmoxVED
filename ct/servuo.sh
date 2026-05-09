@@ -7,8 +7,8 @@ source <(curl -s https://raw.githubusercontent.com/colinsenner/ProxmoxVED/main/m
 
 APP="ServUO"
 var_tags="${var_tags:-ultima-online;uo;game-server}"
-var_cpu="${var_cpu:-8}"
-var_ram="${var_ram:-4096}"
+var_cpu="${var_cpu:-2}"
+var_ram="${var_ram:-1024}"
 var_disk="${var_disk:-20}"
 var_os="${var_os:-debian}"
 var_version="${var_version:-13}"
@@ -42,3 +42,6 @@ echo -e "${INFO}${YW} 3. Download a modern UO client which will allow you to con
 echo -e "${INFO}${YW}    https://www.classicuo.eu/${CL}"
 echo -e "${INFO}${YW} 4. Add a profile in the modern client: ${CL}"
 echo -e "${TAB}${GATEWAY}${BGN}${IP} Port: 2593${CL}"
+echo -e "${INFO}${YW} 5. Connect to the server${CL}"
+echo -e "${INFO}${YW} 6. Enter the console command ${GN}[admin${CL}"
+echo -e "${INFO}${YW} 7. Goto ${GN}ADMINISTER -> World Building ->Create World:${CL}"
