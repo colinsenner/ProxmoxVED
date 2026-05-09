@@ -53,7 +53,7 @@ msg_info "Creating automated installer script"
 # For some reason the installer doesn't respect /S /NCRC /D=... So we send the keystrokes manually
 cat >install_uo.sh <<'EOF'
 #!/usr/bin/env bash
-source /root/uo-env.sh
+source ~/uo-env.sh
 
 wine UOClassicSetup_7_0_24_0.exe &
 WINE_PID=$!
@@ -85,7 +85,7 @@ msg_info "Patching UO to the latest version. This can take a while..."
 # Create patch_uo.sh — runs UO patcher under Wine and waits for sentinel log
 cat >patch_uo.sh <<'EOF'
 #!/usr/bin/env bash
-source /root/uo-env.sh
+source ~/uo-env.sh
 
 cleanup() {
   kill $WINE_PID $INOTIFY_PID 2>/dev/null
