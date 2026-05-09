@@ -90,7 +90,7 @@ WINE_PID=$!
 
 # Give the user feedback about the patch process, so they know it's working by watching the directory for changes
 inotifywait -m -r "$UO_CLASSIC_DIR" --format '%w%f' 2>/dev/null |
-  awk '{ if ($0 != last) { print "Patching: " $0; last = $0; fflush() } }' &
+  awk '/\.(uop|mul|def|mp3|txt)$/ { if ($0 != last) { print "Patching: " $0; last = $0; fflush() } }' &
 INOTIFY_PID=$!
 
 PATCH_TIMEOUT=1800
