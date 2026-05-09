@@ -88,6 +88,7 @@ cd "$UO_CLASSIC_DIR"
 xvfb-run wine UO.exe &
 WINE_PID=$!
 
+# Give the user feedback about the patch process, so they know it's working by watching the directory for changes
 inotifywait -m -r "$UO_CLASSIC_DIR" --format '%w%f' 2>/dev/null |
   awk '{ if ($0 != last) { print "Patching: " $0; last = $0; fflush() } }' &
 INOTIFY_PID=$!
@@ -109,7 +110,7 @@ kill $WINE_PID $INOTIFY_PID 2>/dev/null
 wait $WINE_PID $INOTIFY_PID 2>/dev/null
 
 if [ "$PATCH_SUCCESS" != "true" ]; then
-  msg_error "UO patching timed out. Copy .mul files from a patched UO Classic install to ${UO_DATA_DIR} and re-run."
+  msg_error "UO patching timed out. You can manually copy all *.mul files from a patched UO Classic install to ${UO_DATA_DIR}."
   exit 1
 fi
 msg_ok "UO patching completed"
