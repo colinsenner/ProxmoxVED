@@ -24,6 +24,7 @@ APP_DIR="/opt/ServUO"
 UO_DIR="/opt/uo"
 UO_DATA_DIR="${APP_DIR}/UO_DATA"
 
+# Environment variables for setup
 cat >~/uo-env.sh <<EOF
 export APP_DIR="${APP_DIR}"
 export UO_DIR="${UO_DIR}"
@@ -33,12 +34,13 @@ export DATAPATH_CONFIG="${APP_DIR}/Config/DataPath.cfg"
 export WINEPREFIX="${UO_DIR}"
 export WINEARCH=win32
 EOF
-$STD source ~/uo-env.sh
+echo "source ~/uo-env.sh" >>~/.bashrc
+source ~/.bashrc
 
 msg_info "Installing Dependencies"
 $STD dpkg --add-architecture i386
 $STD apt update
-$STD apt install -y git curl wget zlib1g mono-complete make libz-dev wine wine32 xvfb xdotool inotify-tools
+$STD apt install -y git curl wget zlib1g mono-complete make libz-dev wine wine32 xvfb xdotool inotify-tools tmux
 msg_ok "Installed Dependencies"
 
 #
