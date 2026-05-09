@@ -130,7 +130,7 @@ fi
 msg_ok "UO patching completed"
 
 msg_info "Customize server settings"
-read -r -p "Enter owner account username [default: admin]: " ACCOUNT_USER
+read -r -p "Enter owner account [default: admin]: " ACCOUNT_USER
 ACCOUNT_USER=${ACCOUNT_USER:-admin}
 echo -n "Enter owner account password [default: admin]: "
 ACCOUNT_PASS=${ACCOUNT_PASS:-admin}
@@ -197,6 +197,11 @@ cat >>/etc/motd <<EOF
  Game Port : 2593
  Shard     : ${SHARD_NAME}
  Owner     : ${ACCOUNT_USER}
+
+ Commands:
+    systemctl [start|stop|restart] servuo
+ Admin console command:
+    [admin
 
  Docs: https://github.com/ServUO/ServUO/wiki
 EOF
