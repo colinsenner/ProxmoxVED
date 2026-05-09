@@ -48,7 +48,8 @@ msg_info "Installing dotnet SDK"
 $STD wget https://packages.microsoft.com/config/debian/13/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
 $STD sudo dpkg -i packages-microsoft-prod.deb
 $STD rm packages-microsoft-prod.deb
-$STD apt update && apt install -y dotnet-sdk-10.0
+$STD apt update
+$STD apt install -y dotnet-sdk-10.0
 msg_ok "Installed dotnet SDK"
 
 #
@@ -108,11 +109,9 @@ PATCH_SUCCESS=false
 while [ $PATCH_ELAPSED -lt $PATCH_TIMEOUT ]; do
   # Check for the patch completion log entry
   for log in "$UO_CLASSIC_DIR"/logs/patcher.*.Log; do
-    echo "file: $log"
-
     if [ -f "$log" ] && grep -q "Patch Operation Complete." "$log"; then
       PATCH_SUCCESS=true
-      break
+      break 2
     fi
   done
   sleep 5
