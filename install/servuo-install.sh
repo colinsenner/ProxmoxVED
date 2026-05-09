@@ -24,7 +24,7 @@ APP_DIR="/opt/ServUO"
 UO_DIR="/opt/uo"
 UO_DATA_DIR="${APP_DIR}/UO_DATA"
 
-cat >$HOME/uo-env.sh <<EOF
+cat >~/uo-env.sh <<EOF
 export APP_DIR="${APP_DIR}"
 export UO_DIR="${UO_DIR}"
 export UO_CLASSIC_DIR="${UO_DIR}/drive_c/Program Files/Electronic Arts/Ultima Online Classic"
@@ -33,7 +33,7 @@ export DATAPATH_CONFIG="${APP_DIR}/Config/DataPath.cfg"
 export WINEPREFIX="${UO_DIR}"
 export WINEARCH=win32
 EOF
-$STD source $HOME/uo-env.sh
+$STD source ~/uo-env.sh
 
 msg_info "Installing Dependencies"
 $STD dpkg --add-architecture i386
