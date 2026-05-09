@@ -43,6 +43,14 @@ $STD apt update
 $STD apt install -y git curl wget zlib1g mono-complete make libz-dev wine wine32 xvfb xdotool inotify-tools tmux
 msg_ok "Installed Dependencies"
 
+# dotnet
+msg_info "Installing dotnet SDK"
+$STD wget https://packages.microsoft.com/config/debian/13/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
+$STD sudo dpkg -i packages-microsoft-prod.deb
+$STD rm packages-microsoft-prod.deb
+$STD apt update && apt install -y dotnet-sdk-10.0
+msg_ok "Installed dotnet SDK"
+
 #
 # UO Classic Installation and Patching
 #
@@ -107,7 +115,7 @@ while [ $PATCH_ELAPSED -lt $PATCH_TIMEOUT ]; do
 done
 
 kill $WINE_PID $INOTIFY_PID 2>/dev/null
-wait $WINE_PID $INOTIFY_PID 2>/dev/null
+wait $WINE_PID $INOTIFY_PID 2>/dev/null || true
 
 if [ "$PATCH_SUCCESS" != "true" ]; then
   msg_error "UO patching timed out. You can manually copy all *.mul files from a patched UO Classic install to ${UO_DATA_DIR}."
@@ -115,25 +123,17 @@ if [ "$PATCH_SUCCESS" != "true" ]; then
 fi
 msg_ok "UO patching completed"
 
-# dotnet
-# msg_info "Installing dotnet SDK"
-# $STD wget https://packages.microsoft.com/config/debian/13/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
-# $STD sudo dpkg -i packages-microsoft-prod.deb
-# $STD rm packages-microsoft-prod.deb
-# $STD apt update && apt install -y dotnet-sdk-10.0
-# msg_ok "Installed dotnet SDK"
+msg_info "Cloning ServUO"
+$STD git clone --depth 1 https://github.com/ServUO/ServUO.git ${APP_DIR}
+msg_ok "Cloned ServUO"
 
-# msg_info "Cloning ServUO"
-# $STD git clone --depth 1 https://github.com/ServUO/ServUO.git ${APP_DIR}
-# msg_ok "Cloned ServUO"
+msg_info "Copying UO Client Files to ${UO_DATA_DIR}"
+$STD mkdir -p ${UO_DATA_DIR}
+$STD cp "$UO_CLASSIC_DIR/*.mul" ${UO_DATA_DIR}/
+msg_ok "Copied UO Client Files"
 
-# msg_info "Copying UO Client Files to ${UO_DATA_DIR}"
-# $STD mkdir ${UO_DATA_DIR}
-# $STD cp "/opt/uo/drive_c/Program\ Files/Electronic\ Arts/Ultima\ Online\ Classic/*.mul" ${UO_DATA_DIR}/
-# msg_ok "Copied UO Client Files"
-
-# msg_info "Setting the custom path in ServUO ${DATAPATH_CONFIG}"
-# $STD sed -i "s|^#CustomPath=.*|CustomPath=${UO_DATA_DIR}|" ${DATAPATH_CONFIG}
+msg_info "Setting the custom path in ServUO ${DATAPATH_CONFIG}"
+$STD sed -i "s|^#CustomPath=.*|CustomPath=${UO_DATA_DIR}|" ${DATAPATH_CONFIG}
 
 # msg_info "Creating Service"
 # cat <<EOF >/etc/systemd/system/servuo.service
