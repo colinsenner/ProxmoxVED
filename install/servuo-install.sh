@@ -25,7 +25,7 @@ source ~/.bashrc
 msg_info "Installing Dependencies"
 $STD dpkg --add-architecture i386
 $STD apt update
-$STD apt install -y git curl wget zlib1g mono-complete make libz-dev wine wine32 xvfb xdotool inotify-tools tmux
+$STD apt install -y git mono-complete make wine wine32 xvfb xdotool inotify-tools
 msg_ok "Installed Dependencies"
 
 # dotnet
@@ -55,15 +55,15 @@ cd /opt/uo
 wine UOClassicSetup_7_0_24_0.exe &
 WINE_PID=$!
 
-sleep 10  # Screen 1: Next
+sleep 30  # Screen 1: Next
 xdotool key alt+n
-sleep 5  # Screen 2: Accept license
+sleep 10  # Screen 2: Accept license
 xdotool key alt+a
-sleep 5  # Screen 3: Next
+sleep 10  # Screen 3: Next
 xdotool key alt+n
-sleep 5  # Screen 4: Install
+sleep 10  # Screen 4: Install
 xdotool key alt+i
-sleep 30  # Wait for install to complete, then Finish
+sleep 60  # Wait for install to complete, then Finish
 xdotool key alt+f
 
 echo "Install complete!"
@@ -77,7 +77,7 @@ msg_ok "Installed UO Classic Game Files"
 #
 # Patching UO Classic to generate .mul files
 #
-msg_info "Patching UO to generate .mul files (this can take up to 30 minutes)..."
+msg_info "Patching UO to generate .mul files (Patience)..."
 cd "/opt/uo/drive_c/Program Files/Electronic Arts/Ultima Online Classic"
 
 $STD xvfb-run wine UO.exe &
@@ -126,9 +126,9 @@ SHARD_NAME=${SHARD_NAME:-My Shard}
 msg_ok "Owner account: ${ACCOUNT_USER}"
 msg_ok "Shard name:    ${SHARD_NAME}"
 
-msg_info "Cloning ServUO"
-$STD git clone --depth 1 https://github.com/ServUO/ServUO.git /opt/ServUO
-msg_ok "Cloned ServUO"
+msg_info "Downloading ServUO"
+fetch_and_deploy_gh_release "ServUO" "ServUO/ServUO" "tarball" "latest" "/opt/ServUO"
+msg_ok "Downloaded ServUO"
 
 msg_info "Copying UO Client Files to /opt/ServUO/UO_DATA"
 $STD mkdir -p /opt/ServUO/UO_DATA
@@ -147,14 +147,6 @@ msg_info "Building ServUO"
 cd /opt/ServUO
 printf "y\n%s\n%s\n" "$ACCOUNT_USER" "$ACCOUNT_PASS" | $STD make build release
 msg_ok "Built ServUO"
-
-motd_ssh
-customize
-
-msg_info "Cleaning up"
-$STD apt-get -y autoremove
-$STD apt-get -y autoclean
-msg_ok "Cleaned up"
 
 msg_info "Creating Service"
 cat <<'EOF' >/etc/systemd/system/servuo.service
@@ -198,3 +190,7 @@ echo -e " \${YW}Owner Account:\${CL} \${GN}${ACCOUNT_USER}\${CL}"
 echo -e " \${YW}Shard Name:\${CL} \${GN}${SHARD_NAME}\${CL}"
 echo -e " \${YW}Docs:\${CL} \${GN}https://github.com/ServUO/ServUO/wiki\${CL}"
 EOF
+
+motd_ssh
+customize
+cleanup_lxc
