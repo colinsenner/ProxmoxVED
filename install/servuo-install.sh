@@ -85,7 +85,7 @@ msg_ok "Installed UO Classic Game Files"
 msg_info "Patching UO to generate .mul files (this can take up to 30 minutes)..."
 cd "$UO_CLASSIC_DIR"
 
-xvfb-run wine UO.exe &
+$STD xvfb-run wine UO.exe &
 WINE_PID=$!
 
 # Give the user feedback about the patch process, so they know it's working by watching the directory for changes
