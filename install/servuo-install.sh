@@ -137,7 +137,8 @@ $STD cp "$UO_CLASSIC_DIR"/*.mul ${UO_DATA_DIR}/
 msg_ok "Copied UO Client Files"
 
 msg_info "Setting the custom path in ServUO ${DATAPATH_CONFIG}"
-$STD sed -i "s|^#CustomPath=.*|CustomPath=${UO_DATA_DIR}|" ${DATAPATH_CONFIG}
+$STD sed -i "s|^#CustomPath=.*|CustomPath=${UO_DATA_DIR}|" "${DATAPATH_CONFIG}"
+msg_ok "Set the custom path in ServUO ${DATAPATH_CONFIG}"
 
 # msg_info "Creating Service"
 # cat <<EOF >/etc/systemd/system/servuo.service
