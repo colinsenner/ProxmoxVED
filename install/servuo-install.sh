@@ -106,10 +106,14 @@ PATCH_ELAPSED=0
 PATCH_SUCCESS=false
 
 while [ $PATCH_ELAPSED -lt $PATCH_TIMEOUT ]; do
-  if grep -ql "Patch Operation Complete." "$UO_CLASSIC_DIR"/logs/patcher.*.Log 2>/dev/null; then
-    PATCH_SUCCESS=true
-    break
-  fi
+  # Check for the patch completion log entry
+  for log in "$UO_CLASSIC_DIR"/logs/patcher.*.Log; do
+    if [ -f "$log" ] && grep -q "Patch Operation Complete." "$log"; then
+      PATCH_SUCCESS=true
+      break
+    fi
+  done
+
   sleep 5
   PATCH_ELAPSED=$((PATCH_ELAPSED + 5))
 done
