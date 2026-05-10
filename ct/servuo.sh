@@ -8,7 +8,7 @@ source <(curl -s https://raw.githubusercontent.com/colinsenner/ProxmoxVED/main/m
 APP="ServUO"
 var_tags="${var_tags:-ultima-online;uo;game-server}"
 var_cpu="${var_cpu:-2}"
-var_ram="${var_ram:-2048}"
+var_ram="${var_ram:-1024}"
 var_disk="${var_disk:-20}"
 var_os="${var_os:-debian}"
 var_version="${var_version:-13}"
