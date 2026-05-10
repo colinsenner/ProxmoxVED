@@ -105,7 +105,7 @@ if [ "$PATCH_SUCCESS" != "true" ]; then
 fi
 msg_ok "UO patching completed"
 
-msg_info "Customize server settings"
+msg_ok "Customize server settings"
 read -r -p "Enter owner account [default: admin]: " ACCOUNT_USER
 ACCOUNT_USER=${ACCOUNT_USER:-admin}
 echo -n "Enter owner account password [default: admin]: "
@@ -118,7 +118,7 @@ msg_ok "Owner account: ${ACCOUNT_USER}"
 msg_ok "Shard name:    ${SHARD_NAME}"
 
 msg_info "Downloading ServUO"
-fetch_and_deploy_gh_release "ServUO" "ServUO/ServUO" "tarball" "latest" "/opt/ServUO"
+$STD git clone --depth 1 https://github.com/ServUO/ServUO.git /opt/ServUO
 msg_ok "Downloaded ServUO"
 
 msg_info "Copying UO Client Files to /opt/ServUO/UO_DATA"
@@ -136,7 +136,7 @@ msg_ok "Set shard name in Server.cfg"
 
 msg_info "Building ServUO"
 cd /opt/ServUO
-printf "y\n%s\n%s\n" "$ACCOUNT_USER" "$ACCOUNT_PASS" | $STD make build release
+$STD printf "y\n%s\n%s\n" "$ACCOUNT_USER" "$ACCOUNT_PASS" | $STD make build release
 msg_ok "Built ServUO"
 
 msg_info "Creating Service"
@@ -154,8 +154,8 @@ Restart=always
 WantedBy=multi-user.target
 EOF
 
-# Start the server
-systemctl enable -q --now servuo.service
+# Enable the service
+systemctl enable servuo.service
 msg_ok "Started ServUO service"
 
 cat >>/etc/motd <<EOF
