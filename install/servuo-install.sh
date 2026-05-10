@@ -27,6 +27,9 @@ $STD apt update
 $STD apt install -y git mono-complete zlib1g make wine wine32 xvfb xdotool inotify-tools
 msg_ok "Installed Dependencies"
 
+# Mono looks for libz.so
+ln -s /usr/lib/x86_64-linux-gnu/libz.so.1 /usr/lib/x86_64-linux-gnu/libz.so
+
 # dotnet
 msg_info "Installing dotnet SDK"
 $STD wget https://packages.microsoft.com/config/debian/13/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
@@ -35,9 +38,6 @@ $STD rm packages-microsoft-prod.deb
 $STD apt update
 $STD apt install -y dotnet-sdk-10.0
 msg_ok "Installed dotnet SDK"
-
-# Mono looks for libz.so
-ln -s /usr/lib/x86_64-linux-gnu/libz.so.1 /usr/lib/x86_64-linux-gnu/libz.so
 
 #
 # UO Classic Installation and Patching
