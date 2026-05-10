@@ -16,7 +16,7 @@ update_os
 
 # Wine environment for interactive shells and child scripts
 cat >~/uo-env.sh <<'EOF'
-export WINEPREFIX=/opt/uo
+export WINEPREFIX=/opt/uo/.wine
 export WINEARCH=win32
 EOF
 echo "source ~/uo-env.sh" >>~/.bashrc
@@ -45,7 +45,6 @@ $STD mkdir -p /opt/uo && chown $(whoami):$(whoami) /opt/uo
 cd /opt/uo
 $STD wget http://web.cdn.eamythic.com/us/uo/installers/20120309/UOClassicSetup_7_0_24_0.exe
 
-msg_info "Creating automated installer script"
 # For some reason the installer doesn't respect /S /NCRC /D=... So we send the keystrokes manually
 cat >install_uo.sh <<'EOF'
 #!/usr/bin/env bash
@@ -78,18 +77,17 @@ msg_ok "Installed UO Classic Game Files"
 # Patching UO Classic to generate .mul files
 #
 msg_info "Patching UO to generate .mul files (Patience)..."
-cd "/opt/uo/drive_c/Program Files/Electronic Arts/Ultima Online Classic"
+cd "/opt/uo/.wine/drive_c/Program Files/Electronic Arts/Ultima Online Classic"
 
 # Run the UO.exe to patch the game
 $STD xvfb-run wine UO.exe &
-WINE_PID=$!
 
 PATCH_TIMEOUT=1800
 PATCH_ELAPSED=0
 PATCH_SUCCESS=false
 
 while [ $PATCH_ELAPSED -lt $PATCH_TIMEOUT ]; do
-  for log in "/opt/uo/drive_c/Program Files/Electronic Arts/Ultima Online Classic"/logs/patcher.*.Log; do
+  for log in "/opt/uo/.wine/drive_c/Program Files/Electronic Arts/Ultima Online Classic"/logs/patcher.*.Log; do
     if [ -f "$log" ] && grep -qa "Patch Operation Complete" "$log"; then
       PATCH_SUCCESS=true
       break 2
@@ -105,10 +103,10 @@ if [ "$PATCH_SUCCESS" != "true" ]; then
 fi
 msg_ok "UO patching completed"
 
-msg_ok "Customize server settings"
-read -r -p "Enter owner account [default: admin]: " ACCOUNT_USER
+msg_ok "Creating owner account"
+read -r -p "Username [default: admin]: " ACCOUNT_USER
 ACCOUNT_USER=${ACCOUNT_USER:-admin}
-echo -n "Enter owner account password [default: admin]: "
+echo -n "Password [default: admin]: "
 ACCOUNT_PASS=${ACCOUNT_PASS:-admin}
 read -rs ACCOUNT_PASS
 echo ""
@@ -121,25 +119,21 @@ msg_info "Downloading ServUO"
 $STD git clone --depth 1 https://github.com/ServUO/ServUO.git /opt/ServUO
 msg_ok "Downloaded ServUO"
 
-msg_info "Copying UO Client Files to /opt/ServUO/UO_DATA"
 $STD mkdir -p /opt/ServUO/UO_DATA
-$STD cp "/opt/uo/drive_c/Program Files/Electronic Arts/Ultima Online Classic"/*.mul /opt/ServUO/UO_DATA/
-msg_ok "Copied UO Client Files"
+$STD cp "/opt/uo/.wine/drive_c/Program Files/Electronic Arts/Ultima Online Classic"/*.mul /opt/ServUO/UO_DATA/
+msg_ok "Copied UO Client Files to /opt/ServUO/UO_DATA"
 
-msg_info "Setting the custom path in ServUO"
 $STD sed -i "s|^#CustomPath=.*|CustomPath=/opt/ServUO/UO_DATA|" /opt/ServUO/Config/DataPath.cfg
 msg_ok "Set the custom path in ServUO"
 
-msg_info "Setting shard name in Server.cfg"
 $STD sed -i "s|^Name=.*|Name=${SHARD_NAME}|" /opt/ServUO/Config/Server.cfg
 msg_ok "Set shard name in Server.cfg"
 
 msg_info "Building ServUO"
 cd /opt/ServUO
-$STD printf "y\n%s\n%s\n" "$ACCOUNT_USER" "$ACCOUNT_PASS" | $STD make build release
+$STD printf "y\n%s\n%s\n" "$ACCOUNT_USER" "$ACCOUNT_PASS" | $STD make build
 msg_ok "Built ServUO"
 
-msg_info "Creating Service"
 cat <<'EOF' >/etc/systemd/system/servuo.service
 [Unit]
 Description=ServUO Ultima Online Server
@@ -153,6 +147,7 @@ Restart=always
 [Install]
 WantedBy=multi-user.target
 EOF
+msg_ok "Created service file"
 
 # Enable the service
 systemctl enable servuo.service
