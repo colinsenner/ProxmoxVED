@@ -117,8 +117,8 @@ msg_ok "Creating owner account"
 read -r -p "Username [default: admin]: " ACCOUNT_USER
 ACCOUNT_USER=${ACCOUNT_USER:-admin}
 echo -n "Password [default: admin]: "
-ACCOUNT_PASS=${ACCOUNT_PASS:-admin}
 read -rs ACCOUNT_PASS
+ACCOUNT_PASS=${ACCOUNT_PASS:-admin}
 echo ""
 read -r -p "Enter shard name [default: My Shard]: " SHARD_NAME
 SHARD_NAME=${SHARD_NAME:-My Shard}
