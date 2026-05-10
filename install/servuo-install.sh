@@ -129,6 +129,26 @@ msg_ok "Set the custom path in ServUO"
 $STD sed -i "s|^Name=.*|Name=${SHARD_NAME}|" /opt/ServUO/Config/Server.cfg
 msg_ok "Set shard name in Server.cfg"
 
+# Create owner account
+msg_info "Creating owner account"
+CRYPT_PASS=$($STD echo -n "${ACCOUNT_USER}${ACCOUNT_PASS}" | sha1sum | head -c 40 | tr '[:lower:]' '[:upper:]' | sed 's/../&-/g;s/-$//')
+mkdir -p /opt/ServUO/Saves/Accounts
+cat >/opt/ServUO/Saves/Accounts/accounts.xml <<EOF
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<accounts count="1">
+        <account>
+                <username>${ACCOUNT_USER}</username>
+                <newCryptPassword>${CRYPT_PASS}</newCryptPassword>
+                <accessLevel>Owner</accessLevel>
+                <created>2026-01-01T00:00:00.000000Z</created>
+                <lastLogin>2026-01-01T00:00:00.000000Z</lastLogin>
+                <totalGameTime>PT8.39915S</totalGameTime>
+                <totalCurrency>1000000</totalCurrency>
+                <sovereigns>1000000</sovereigns>
+        </account>
+</accounts>
+EOF
+
 msg_info "Building ServUO"
 cd /opt/ServUO
 $STD printf "y\n%s\n%s\n" "$ACCOUNT_USER" "$ACCOUNT_PASS" | $STD make build
@@ -138,11 +158,14 @@ cat <<'EOF' >/etc/systemd/system/servuo.service
 [Unit]
 Description=ServUO Ultima Online Server
 After=network.target
+StartLimitInterval=200
+StartLimitBurst=5
 
 [Service]
 WorkingDirectory=/opt/ServUO
-ExecStart=/usr/bin/mono ServUO.exe
+ExecStart=mono ServUO.exe
 Restart=always
+RestartSec=30
 
 [Install]
 WantedBy=multi-user.target
@@ -150,32 +173,11 @@ EOF
 msg_ok "Created service file"
 
 # Enable the service
-systemctl enable servuo.service
+systemctl enable -q --now servuo.service
 msg_ok "Started ServUO service"
 
-cat >>/etc/motd <<EOF
-
- ServUO Ultima Online Server - ${SHARD_NAME}
- --------------------------------
- Game Port : 2593
- Shard     : ${SHARD_NAME}
- Owner     : ${ACCOUNT_USER}
-
- Commands:
-    systemctl [start|stop|restart] servuo
- Admin console command:
-    [admin
-
- Docs: https://github.com/ServUO/ServUO/wiki
-EOF
-
-cat >>/etc/profile.d/00_lxc-details.sh <<EOF
-
-echo -e " \${YW}ServUO Port:\${CL} \${GN}2593\${CL}"
-echo -e " \${YW}Owner Account:\${CL} \${GN}${ACCOUNT_USER}\${CL}"
-echo -e " \${YW}Shard Name:\${CL} \${GN}${SHARD_NAME}\${CL}"
-echo -e " \${YW}Docs:\${CL} \${GN}https://github.com/ServUO/ServUO/wiki\${CL}"
-EOF
+# Cleanup
+pkill UO.bin || true
 
 motd_ssh
 customize
