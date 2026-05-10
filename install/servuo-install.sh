@@ -99,10 +99,6 @@ while [ $PATCH_ELAPSED -lt $PATCH_TIMEOUT ]; do
   PATCH_ELAPSED=$((PATCH_ELAPSED + 5))
 done
 
-# Cleanup patching processes
-kill $WINE_PID 2>/dev/null
-wait $WINE_PID 2>/dev/null || true
-
 if [ "$PATCH_SUCCESS" != "true" ]; then
   msg_error "UO patching timed out. You can manually copy all *.mul files from a patched UO Classic install to /opt/ServUO/UO_DATA."
   exit 1
