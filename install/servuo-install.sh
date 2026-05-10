@@ -80,13 +80,9 @@ msg_ok "Installed UO Classic Game Files"
 msg_info "Patching UO to generate .mul files (Patience)..."
 cd "/opt/uo/drive_c/Program Files/Electronic Arts/Ultima Online Classic"
 
+# Run the UO.exe to patch the game
 $STD xvfb-run wine UO.exe &
 WINE_PID=$!
-
-# Give the user feedback about the patch process, so they know it's working by watching the directory for changes
-inotifywait -m -r "/opt/uo/drive_c/Program Files/Electronic Arts/Ultima Online Classic" --format '%w%f' 2>/dev/null |
-  awk '/\.(uop|mul|def|mp3|txt)$/ { if ($0 != last) { print "Patching: " $0; last = $0; fflush() } }' &
-INOTIFY_PID=$!
 
 PATCH_TIMEOUT=1800
 PATCH_ELAPSED=0
@@ -104,9 +100,8 @@ while [ $PATCH_ELAPSED -lt $PATCH_TIMEOUT ]; do
 done
 
 # Cleanup patching processes
-kill $WINE_PID $INOTIFY_PID 2>/dev/null
-pkill -f "UO.bin" 2>/dev/null || true
-wait $WINE_PID $INOTIFY_PID 2>/dev/null || true
+kill $WINE_PID 2>/dev/null
+wait $WINE_PID 2>/dev/null || true
 
 if [ "$PATCH_SUCCESS" != "true" ]; then
   msg_error "UO patching timed out. You can manually copy all *.mul files from a patched UO Classic install to /opt/ServUO/UO_DATA."
