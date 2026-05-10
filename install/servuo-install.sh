@@ -8,7 +8,6 @@
 # Import Functions und Setup
 source /dev/stdin <<<"$FUNCTIONS_FILE_PATH"
 color
-verb_ip6
 catch_errors
 setting_up_container
 network_check
@@ -111,12 +110,6 @@ $STD mkdir -p /opt/ServUO/UO_DATA
 $STD cp "/opt/uo/.wine/drive_c/Program Files/Electronic Arts/Ultima Online Classic"/*.mul /opt/ServUO/UO_DATA/
 msg_ok "Copied UO Client Files to /opt/ServUO/UO_DATA"
 
-$STD sed -i "s|^#CustomPath=.*|CustomPath=/opt/ServUO/UO_DATA|" /opt/ServUO/Config/DataPath.cfg
-msg_ok "Set the custom path in ServUO"
-
-$STD sed -i "s|^Name=.*|Name=${SHARD_NAME}|" /opt/ServUO/Config/Server.cfg
-msg_ok "Set shard name in Server.cfg"
-
 msg_ok "Creating owner account"
 read -r -p "Username [default: admin]: " ACCOUNT_USER
 ACCOUNT_USER=${ACCOUNT_USER:-admin}
@@ -128,6 +121,16 @@ read -r -p "Enter shard name [default: My Shard]: " SHARD_NAME
 SHARD_NAME=${SHARD_NAME:-My Shard}
 msg_ok "Owner account: ${ACCOUNT_USER}"
 msg_ok "Shard name:    ${SHARD_NAME}"
+
+# Configure ServUO
+$STD sed -i "s|^#CustomPath=.*|CustomPath=/opt/ServUO/UO_DATA|" /opt/ServUO/Config/DataPath.cfg
+msg_ok "Set the custom path in ServUO"
+$STD sed -i "s|^Name=.*|Name=${SHARD_NAME}|" /opt/ServUO/Config/Server.cfg
+msg_ok "Set shard name in Server.cfg"
+$STD sed -i "s|AccountsPerIp=.*|AccountsPerIp=10|" /opt/ServUO/Config/Accounts.cfg
+msg_ok "Set AccountsPerIp to 10 in Accounts.cfg"
+$STD sed -i "s|PasswordCommandEnabled=.*|PasswordCommandEnabled=True|" /opt/ServUO/Config/Accounts.cfg
+msg_ok "Enabled [password command in Accounts.cfg"
 
 # Create owner account
 CRYPT_PASS=$(echo -n "${ACCOUNT_USER}${ACCOUNT_PASS}" | sha1sum | head -c 40 | tr '[:lower:]' '[:upper:]' | sed 's/../&-/g;s/-$//')
