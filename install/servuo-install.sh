@@ -103,18 +103,6 @@ if [ "$PATCH_SUCCESS" != "true" ]; then
 fi
 msg_ok "UO patching completed"
 
-msg_ok "Creating owner account"
-read -r -p "Username [default: admin]: " ACCOUNT_USER
-ACCOUNT_USER=${ACCOUNT_USER:-admin}
-echo -n "Password [default: admin]: "
-ACCOUNT_PASS=${ACCOUNT_PASS:-admin}
-read -rs ACCOUNT_PASS
-echo ""
-read -r -p "Enter shard name [default: My Shard]: " SHARD_NAME
-SHARD_NAME=${SHARD_NAME:-My Shard}
-msg_ok "Owner account: ${ACCOUNT_USER}"
-msg_ok "Shard name:    ${SHARD_NAME}"
-
 msg_info "Downloading ServUO"
 $STD git clone --depth 1 https://github.com/ServUO/ServUO.git /opt/ServUO
 msg_ok "Downloaded ServUO"
@@ -129,9 +117,20 @@ msg_ok "Set the custom path in ServUO"
 $STD sed -i "s|^Name=.*|Name=${SHARD_NAME}|" /opt/ServUO/Config/Server.cfg
 msg_ok "Set shard name in Server.cfg"
 
+msg_ok "Creating owner account"
+read -r -p "Username [default: admin]: " ACCOUNT_USER
+ACCOUNT_USER=${ACCOUNT_USER:-admin}
+echo -n "Password [default: admin]: "
+ACCOUNT_PASS=${ACCOUNT_PASS:-admin}
+read -rs ACCOUNT_PASS
+echo ""
+read -r -p "Enter shard name [default: My Shard]: " SHARD_NAME
+SHARD_NAME=${SHARD_NAME:-My Shard}
+msg_ok "Owner account: ${ACCOUNT_USER}"
+msg_ok "Shard name:    ${SHARD_NAME}"
+
 # Create owner account
-msg_info "Creating owner account"
-CRYPT_PASS=$($STD echo -n "${ACCOUNT_USER}${ACCOUNT_PASS}" | sha1sum | head -c 40 | tr '[:lower:]' '[:upper:]' | sed 's/../&-/g;s/-$//')
+CRYPT_PASS=$(echo -n "${ACCOUNT_USER}${ACCOUNT_PASS}" | sha1sum | head -c 40 | tr '[:lower:]' '[:upper:]' | sed 's/../&-/g;s/-$//')
 mkdir -p /opt/ServUO/Saves/Accounts
 cat >/opt/ServUO/Saves/Accounts/accounts.xml <<EOF
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
